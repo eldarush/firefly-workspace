@@ -116,7 +116,7 @@ def _team_confirm(ff, payload, cfg, st):
         return
     if st.get("team_confirm_asked") or st.get("team_confirmed"):
         return
-    if st.get("turns", 0) < 3:
+    if st.get("turns", 0) < 2:
         return
 
     import team
