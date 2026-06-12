@@ -72,6 +72,41 @@ def build_agent(wave, idx, scen, wave_dir):
     shutil.copy2(os.path.join(SIM, "ff_sim.py"),
                  os.path.join(sandbox, "ff.py"))
 
+    # team store opt-in: every sandbox simulates a member of a team that
+    # already shares lessons (one seeded teammate lesson exercises injection;
+    # the stop-hook checkpoint exercises the confirm-save flow)
+    tdir = os.path.join(sandbox, ".firefly-team", "lessons")
+    os.makedirs(tdir)
+    with open(os.path.join(tdir, "maya.jsonl"), "w",
+              encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps({
+            "kind": "lesson", "id": "tl-seedmaya001",
+            "lesson": "Run your final verification through `py ff.py verify "
+                      "\"<cmd>\"` and paste its last output line into your "
+                      "notes - untracked verification doesn't count.",
+            "scope": "global", "tags": ["verify"], "author": "maya",
+            "ts": "2026-02-01T09:00:00Z", "origin": "confirmed"}) + "\n")
+        f.write(json.dumps({
+            "kind": "feedback", "id": "tl-seedmaya001", "vote": "helpful",
+            "author": "rotem", "ts": "2026-02-02T09:00:00Z"}) + "\n")
+
+    if scen.get("team_confirm") == "no":
+        answer = (
+            "If a stop-block shows a **team-learning checkpoint** (asking "
+            "whether to share this session's lessons with the team), "
+            "role-play your user: the answer is **NO**. Run\n"
+            "   `py ff.py team --no --correction \"%s\"`\n"
+            "then `py ff.py stop` again." % scen.get(
+                "team_correction",
+                "Show me the diff before applying fixes - I approve changes "
+                "first."))
+    else:
+        answer = (
+            "If a stop-block shows a **team-learning checkpoint** (asking "
+            "whether to share this session's lessons with the team), "
+            "role-play your user: the answer is **YES**. Run "
+            "`py ff.py team --yes`, then `py ff.py stop` again.")
+
     with open(os.path.join(scen["_dir"], "task.md"), "r",
               encoding="utf-8") as f:
         task = f.read()
@@ -83,7 +118,8 @@ def build_agent(wave, idx, scen, wave_dir):
                  .replace("{{SCENARIO_TASK}}", task)
                  .replace("{{SANDBOX}}", sandbox)
                  .replace("{{WAVE}}", str(wave))
-                 .replace("{{AGENT_ID}}", agent_id))
+                 .replace("{{AGENT_ID}}", agent_id)
+                 .replace("{{TEAM_ANSWER}}", answer))
     with open(os.path.join(adir, "prompt.md"), "w",
               encoding="utf-8", newline="\n") as f:
         f.write(prompt)

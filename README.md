@@ -63,6 +63,27 @@ Three automatic learning paths, layered:
    give +1 helpful to every lesson that was injected. Two clean sessions
    activate a trial lesson. Usage IS the feedback.
 
+### Team learning (every member improves the plugin for everyone)
+
+Opt in by creating a shared directory: `mkdir .firefly-team` in the repo
+(commit it - it merges cleanly because each member appends only to their
+own `lessons/<author>.jsonl` file), or point `$FIREFLY_TEAM_DIR` at a shared
+filesystem path (NFS/SMB). Then:
+
+- **Confirmed sharing.** At the end of a session that produced fresh
+  learnings, Firefly stops once and has Claude ask YOU: *"save these lessons
+  to the team store so they improve Firefly for everyone?"* Say **yes** and
+  they ship, attributed to you. Say **no and what should have happened
+  instead** - your correction is filed as the lesson (the strongest learning
+  signal there is). Nothing is shared without a human's yes.
+- **Proven sharing.** Lessons that earn `helpful >= 2` with zero harm in
+  your local playbook auto-share silently - they already passed the bar.
+- **Consumption.** Everyone's SessionStart injects the top teammate lessons
+  (deduped against their own playbook, author-attributed, vote-ranked), and
+  their clean verified sessions vote those lessons up for the whole team.
+- Review the store anytime: `/ff:lessons team`. Config under `team.*`
+  (`confirm_save`, `max_inject`, `share_threshold`, `author`, `dir`).
+
 Everything automated is **deterministic where it matters** (a Python script
 applies all memory updates - the LLM only proposes). Everything durable is
 **human-governed** (`/ff:lessons` is the law book; auto-lessons start

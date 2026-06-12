@@ -31,5 +31,17 @@ owns this law book; you are the clerk.
    lawmaker to resolve. If the playbook nears its caps (100 active / 20 per
    scope), suggest pruning the lowest-scoring entries.
 
+5. **Team store** (when `.firefly-team/` or `$FIREFLY_TEAM_DIR` exists):
+   - `team` / `show team`: run
+     `py "${CLAUDE_PLUGIN_ROOT}/scripts/team_share.py" --status` and show the
+     shared lessons with author + votes.
+   - Lessons reach the team store only via the end-of-session confirmation
+     (the user explicitly says yes) or by earning `helpful >=
+     team.share_threshold` locally. Each member appends to their OWN file
+     (`lessons/<author>.jsonl`), so a git-committed store never conflicts:
+     commit and pull `.firefly-team/` like any other directory.
+   - To retract something shared by mistake: delete the line from your author
+     file (it is yours) and tell teammates to pull.
+
 Audit: every op lands in `.firefly/audit.log` automatically - mention it when
 the user asks about traceability.

@@ -13,6 +13,8 @@ Usage (always run from the sandbox directory):
     py ff.py verify "command"       run your VERIFICATION command, always tracked
     py ff.py guard "shell command"  DRY-RUN policy check (never executes)
     py ff.py edited <path>          PostToolUse Edit (after editing a file)
+    py ff.py team --yes             share session lessons to the team store
+    py ff.py team --no --correction "text"   refuse + file the correction
     py ff.py stop                   Stop (verification gate / auto-retro)
     py ff.py stop --again           Stop with stop_hook_active=true
     py ff.py end                    SessionEnd (distill + rollup)
@@ -76,7 +78,10 @@ def cmd_start():
     print("SANDBOX COMMAND MAP: in this sandbox the guard dry-run entry "
           "point is `py ff.py guard \"<cmd>\"` and the tracked verify entry "
           "point is `py ff.py verify \"<cmd>\"`. Use those forms wherever "
-          "the contract mentions guard checks or verify_run.py.")
+          "the contract mentions guard checks or verify_run.py. If a "
+          "stop-block mentions team_share.py, the sandbox form is "
+          "`py ff.py team --yes` / `py ff.py team --no --correction "
+          "\"...\"`.")
     print("=== END CONTEXT ===")
 
 
@@ -171,6 +176,20 @@ def cmd_edited(path):
     print("(edit recorded: %s)" % path)
 
 
+def cmd_team(args):
+    """Relay the user's share decision to the real team_share entry point."""
+    env = dict(os.environ)
+    env["CLAUDE_PROJECT_DIR"] = HERE
+    env["CLAUDE_PLUGIN_ROOT"] = PLUGIN
+    env["FF_SESSION_ID"] = SID
+    env["FIREFLY_AUTHOR"] = ASSIGN.get("agent_id", "sim-agent")
+    p = subprocess.run(
+        [PY, os.path.join(PLUGIN, "scripts", "team_share.py")] + list(args),
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
+        cwd=HERE, timeout=60)
+    sys.stdout.write(p.stdout.decode("utf-8", "replace"))
+
+
 def cmd_stop(again=False):
     res = hook("stop_gate.py", {"hook_event_name": "Stop",
                                 "stop_hook_active": bool(again)})
@@ -211,6 +230,8 @@ def main():
         cmd_verify(args[1] if len(args) > 1 else "")
     elif op == "edited":
         cmd_edited(args[1] if len(args) > 1 else "")
+    elif op == "team":
+        cmd_team(args[1:])
     elif op == "stop":
         cmd_stop(again="--again" in args)
     elif op == "end":

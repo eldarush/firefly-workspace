@@ -62,6 +62,16 @@ budgeted output. GA-era hook events only - no version-fragile features.
 6. **Per-project `.firefly/`, self-gitignored** - state follows the repo,
    never pollutes it; teams share learning through reviewed channels
    (seed playbooks, promoted skills), not through accidental commits.
+   The exception is deliberate: `.firefly-team/` (or `$FIREFLY_TEAM_DIR`)
+   is the shared lesson store - append-only, per-author files
+   (`lessons/<author>.jsonl`) so git/NFS sharing never conflicts; lessons
+   are content-addressed (`tl-<hash>`) so duplicates fold across members.
+   Fresh lessons enter it only after the USER says yes (stop-hook
+   confirmation via `scripts/team_share.py`); a "no" files the user's
+   correction as the lesson instead. Locally proven lessons
+   (helpful >= `team.share_threshold`, zero harm) auto-share at SessionEnd.
+   SessionStart injects top teammate lessons; clean verified sessions vote
+   them helpful for everyone (`scripts/team.py`).
 7. **Token budgets as hard constraints** - SessionStart <= 1600, lessons
    <= 1200, frames ~120, nudges <= 150. On a 32-40K effective window, every
    injected token must displace something less valuable.

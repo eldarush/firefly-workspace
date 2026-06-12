@@ -8,6 +8,11 @@
     "mode": "tripwire",
     "tripwire": "logs/.keep"
   },
-  "plan_keywords": ["webhook", "config"],
-  "verify_timeout": 90
+  "plan_keywords": [
+    "webhook",
+    "config"
+  ],
+  "verify_timeout": 90,
+  "team_confirm": "no",
+  "team_correction": "Postmortems must list the exact config keys changed - paste the diff, not a summary."
 }

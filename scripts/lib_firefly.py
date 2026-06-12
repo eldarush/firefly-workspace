@@ -215,6 +215,14 @@ DEFAULT_CONFIG = {
         "inject": True,               # inject pinned facts + section index at SessionStart
         "max_inject_tokens": 500,     # budget for the pinned FF:ALWAYS block
     },
+    "team": {
+        "enabled": True,              # team learning loop master switch
+        "dir": "",                    # shared store dir; else $FIREFLY_TEAM_DIR; else <project>/.firefly-team if present
+        "author": "",                 # attribution; else $FIREFLY_AUTHOR / $USERNAME / $USER
+        "confirm_save": True,         # end-of-response: ask the user before saving learnings
+        "max_inject": 3,              # teammate lessons injected at SessionStart
+        "share_threshold": 2,         # local lesson helpful-count that auto-shares it to the team
+    },
     "docs": {
         "kiwix_url": "",              # e.g. http://wikiall.internal:8090
         "extra_sources": [],

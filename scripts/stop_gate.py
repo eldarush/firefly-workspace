@@ -107,6 +107,50 @@ def _auto_reflect(ff, payload, cfg, st):
     })
 
 
+def _team_confirm(ff, payload, cfg, st):
+    """Once per session: before this session's fresh lessons go anywhere
+    near the shared team store, make Claude ask the USER. A 'no' is captured
+    as a corrective lesson - the strongest learning signal we can get."""
+    tcfg = cfg.get("team", {}) or {}
+    if not (tcfg.get("enabled", True) and tcfg.get("confirm_save", True)):
+        return
+    if st.get("team_confirm_asked") or st.get("team_confirmed"):
+        return
+    if st.get("turns", 0) < 3:
+        return
+
+    import team
+    if not team.resolve_team_dir(payload, cfg):
+        return
+    pending = team.pending_share_ops(payload, limit=3)
+    if not pending:
+        return
+
+    st["team_confirm_asked"] = True
+    ff.save_state(payload, st)
+    ff.log_event(payload, "team_confirm", n=len(pending))
+
+    share = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "team_share.py")
+    lines = ["- %s" % p.get("lesson", "")[:160] for p in pending]
+    ff.emit({
+        "decision": "block",
+        "reason": (
+            "Firefly team-learning checkpoint (once per session). This "
+            "session distilled lesson(s) that could be shared with the whole "
+            "team:\n%s\n"
+            "ASK THE USER now, in one short message: 'Save these lessons to "
+            "the team store so they improve Firefly for everyone? (yes / no - "
+            "and if no, what should I have done differently?)' Do NOT decide "
+            "for them; wait for their answer, then run exactly one of:\n"
+            "  py \"%s\" --yes\n"
+            "  py \"%s\" --no --correction \"<their words>\"\n"
+            "A 'no' with a correction is just as valuable - it becomes the "
+            "lesson. Then finish normally." % ("\n".join(lines), share, share)
+        ),
+    })
+
+
 def main():
     import lib_firefly as ff
 
@@ -122,7 +166,14 @@ def main():
         return
 
     try:
+        if st.get("reflected") and not st.get("team_confirm_asked"):
+            _team_confirm(ff, payload, cfg, st)
+            return
         _auto_reflect(ff, payload, cfg, st)
+        if not st.get("reflected"):
+            # nothing to reflect on this stop - lessons may already be pending
+            # from the deterministic distiller, so still offer the team ask
+            _team_confirm(ff, payload, cfg, st)
     except Exception:
         pass
 

@@ -783,6 +783,172 @@ def main():
         finally:
             shutil.rmtree(envproj, ignore_errors=True)
 
+        # ---------------- team learning store --------------------------
+        print("\n[team]")
+        teamproj = tempfile.mkdtemp(prefix="ff-team-")
+        try:
+            import team as team_mod
+            os.environ["CLAUDE_PROJECT_DIR"] = teamproj
+            tpay = {"cwd": teamproj, "session_id": "team-1"}
+
+            # (a) config defaults + dormant without opt-in
+            tcfg = ff.load_config(tpay)
+            check("team config defaults",
+                  tcfg["team"]["enabled"] and tcfg["team"]["confirm_save"]
+                  and tcfg["team"]["max_inject"] == 3)
+            check("team store dormant without opt-in",
+                  team_mod.resolve_team_dir(tpay, tcfg) is None)
+
+            # (b) creating .firefly-team is the opt-in
+            tdir = os.path.join(teamproj, ".firefly-team")
+            os.makedirs(tdir)
+            check("mkdir .firefly-team activates store",
+                  team_mod.resolve_team_dir(tpay, tcfg) == tdir)
+
+            # (c) stop_gate asks the user before sharing (block, once)
+            os.makedirs(os.path.join(teamproj, ".firefly", "state"), exist_ok=True)
+            with open(os.path.join(teamproj, ".firefly", "state", "team-1.json"),
+                      "w", encoding="utf-8") as f:
+                json.dump({"session_id": "team-1", "turns": 5,
+                           "reflected": True}, f)
+            with open(os.path.join(teamproj, ".firefly", "proposals.jsonl"),
+                      "w", encoding="utf-8") as f:
+                f.write(json.dumps({"op": "add", "scope": "dev",
+                                    "tags": ["ci"], "lesson":
+                                    "Always pin CI image digests.",
+                                    "actor": "reflector"}) + "\n")
+            rc, out, err = run_hook("stop_gate.py", base(teamproj, sid="team-1",
+                                    hook_event_name="Stop"), teamproj)
+            check("team confirm blocks once to ask the user",
+                  (out or {}).get("decision") == "block"
+                  and "team store" in (out or {}).get("reason", "")
+                  and "team_share.py" in (out or {}).get("reason", ""),
+                  str(out)[:200])
+            check("confirm-asked flag set",
+                  read_state(teamproj, "team-1").get("team_confirm_asked") is True)
+            rc, out, _ = run_hook("stop_gate.py", base(teamproj, sid="team-1",
+                                  hook_event_name="Stop"), teamproj)
+            check("second stop does not re-ask", out is None, str(out)[:120])
+
+            # (d) user says YES -> proposals shared, attributed, content-addressed
+            tenv = dict(os.environ)
+            tenv.update({"CLAUDE_PROJECT_DIR": teamproj,
+                         "FF_SESSION_ID": "team-1", "FIREFLY_AUTHOR": "Alice X"})
+            p = subprocess.run([PY, os.path.join(SCRIPTS, "team_share.py"),
+                                "--yes"], cwd=teamproj, env=tenv,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               timeout=30)
+            afile = os.path.join(tdir, "lessons", "alice-x.jsonl")
+            check("--yes writes to author-named file", os.path.exists(afile),
+                  p.stdout.decode("utf-8", "replace")[:200])
+            data = team_mod.load_team(tdir)
+            lid = team_mod.lesson_id("Always pin CI image digests.")
+            check("shared lesson folded + attributed",
+                  lid in data["lessons"]
+                  and data["lessons"][lid]["author"] == "Alice X"
+                  and data["lessons"][lid]["origin"] == "confirmed")
+            evs = [e for e in read_events(teamproj) if e.get("ev") == "team_share_yes"]
+            check("team_share_yes event logged", len(evs) == 1)
+
+            # (e) duplicate from another member dedups; votes fold
+            bfile = os.path.join(tdir, "lessons", "bob.jsonl")
+            with open(bfile, "w", encoding="utf-8") as f:
+                f.write(json.dumps({"kind": "lesson", "id": lid,
+                                    "lesson": "Always pin CI image digests.",
+                                    "scope": "dev", "tags": ["ci"],
+                                    "author": "bob", "ts": ff.now_iso(),
+                                    "origin": "confirmed"}) + "\n")
+                f.write(json.dumps({"kind": "feedback", "id": lid,
+                                    "vote": "helpful", "author": "bob",
+                                    "ts": ff.now_iso()}) + "\n")
+            data = team_mod.load_team(tdir)
+            check("cross-member dedup by content id",
+                  len(data["lessons"]) == 1
+                  and data["votes"][lid]["helpful"] == 1)
+
+            # (f) session_start injects teammate lessons with attribution
+            # (clear pending proposals so the local playbook stays empty and
+            # the dedup filter doesn't legitimately suppress the team lesson)
+            os.remove(os.path.join(teamproj, ".firefly", "proposals.jsonl"))
+            rc, out, _ = run_hook("session_start.py", base(teamproj, sid="team-2",
+                                  source="startup", hook_event_name="SessionStart"),
+                                  teamproj)
+            ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+            check("team lessons injected with author",
+                  "Team lessons" in ctx and "(Alice X)" in ctx
+                  and "pin CI image digests" in ctx, ctx[-300:])
+            check("injected team ids recorded",
+                  read_state(teamproj, "team-2").get("injected_team_lessons") == [lid])
+
+            # (g) clean verified session-end thanks the teammates (+helpful)
+            stp = os.path.join(teamproj, ".firefly", "state", "team-2.json")
+            with open(stp, "r", encoding="utf-8") as f:
+                st2 = json.load(f)
+            st2.update({"turns": 4, "verify_seen": True, "last_verify": "pass",
+                        "corrections": 0})
+            with open(stp, "w", encoding="utf-8") as f:
+                json.dump(st2, f)
+            rc, out, _ = run_hook("session_end.py", base(teamproj, sid="team-2",
+                                  hook_event_name="SessionEnd", reason="exit"),
+                                  teamproj)
+            data = team_mod.load_team(tdir)
+            check("clean session feeds +helpful to team lesson",
+                  data["votes"][lid]["helpful"] >= 2,
+                  str(data["votes"]))
+
+            # (h) user says NO + correction -> corrective proposal, no share
+            with open(os.path.join(teamproj, ".firefly", "proposals.jsonl"),
+                      "w", encoding="utf-8") as f:
+                f.write(json.dumps({"op": "add", "scope": "dev", "tags": [],
+                                    "lesson": "Bad guess lesson.",
+                                    "actor": "reflector"}) + "\n")
+            tenv["FF_SESSION_ID"] = "team-3"
+            p = subprocess.run([PY, os.path.join(SCRIPTS, "team_share.py"),
+                                "--no", "--correction",
+                                "Ask before touching shared dashboards."],
+                               cwd=teamproj, env=tenv, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, timeout=30)
+            props = [json.loads(l) for l in
+                     open(os.path.join(teamproj, ".firefly", "proposals.jsonl"),
+                          encoding="utf-8") if l.strip()]
+            corr = [pr for pr in props if "correction" in pr.get("tags", [])]
+            check("--no files the correction as a lesson proposal",
+                  len(corr) == 1 and corr[0]["actor"] == "user"
+                  and "dashboards" in corr[0]["lesson"],
+                  p.stdout.decode("utf-8", "replace")[:200])
+            check("rejected lesson NOT shared",
+                  team_mod.lesson_id("Bad guess lesson.")
+                  not in team_mod.load_team(tdir)["lessons"])
+
+            # (i) harmful-dominated team lessons are not injected
+            with open(bfile, "a", encoding="utf-8") as f:
+                for _ in range(4):
+                    f.write(json.dumps({"kind": "feedback", "id": lid,
+                                        "vote": "harmful", "author": "bob",
+                                        "ts": ff.now_iso()}) + "\n")
+            chosen = team_mod.select_team_for_injection(tpay, tcfg)
+            check("harmful-dominated lesson filtered out",
+                  all(r.get("id") != lid for r in chosen))
+
+            # (j) share_promoted sends proven local lessons to the team
+            os.makedirs(os.path.join(teamproj, ".firefly"), exist_ok=True)
+            with open(os.path.join(teamproj, ".firefly", "playbook.json"),
+                      "w", encoding="utf-8") as f:
+                json.dump({"version": 1, "lessons": [
+                    {"id": "L1", "lesson": "Use helm diff before any upgrade.",
+                     "scope": "sre", "tags": ["helm"], "status": "active",
+                     "helpful": 3, "harmful": 0, "ts": ff.now_iso()}]}, f)
+            n = team_mod.share_promoted(tpay)
+            data = team_mod.load_team(tdir)
+            plid = team_mod.lesson_id("Use helm diff before any upgrade.")
+            check("proven local lesson auto-shared as promoted",
+                  n == 1 and data["lessons"][plid]["origin"] == "promoted")
+            check("promoted share is idempotent",
+                  team_mod.share_promoted(tpay) == 0)
+        finally:
+            os.environ["CLAUDE_PROJECT_DIR"] = project
+            shutil.rmtree(teamproj, ignore_errors=True)
+
         # ---------------- structure lint -------------------------------
         print("\n[structure]")
         structure_lint()

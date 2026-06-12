@@ -47,6 +47,7 @@ From inside `{{SANDBOX}}`:
 5. When you believe you are done: `py ff.py stop`.
    - If it prints a STOP-BLOCK, do exactly what it asks (e.g. run the
      verifier, or append lesson proposals), then `py ff.py stop` again.
+   - {{TEAM_ANSWER}}
    - Repeat until you see "stop accepted".
 6. `py ff.py end`.
 

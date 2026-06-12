@@ -8,6 +8,10 @@
     "mode": "audit",
     "tripwire": null
   },
-  "plan_keywords": ["slugify", "test"],
-  "verify_timeout": 90
+  "plan_keywords": [
+    "slugify",
+    "test"
+  ],
+  "verify_timeout": 90,
+  "team_confirm": "yes"
 }
