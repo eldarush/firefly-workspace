@@ -2,6 +2,42 @@
 
 All notable changes to Firefly Workspace.
 
+## [1.1.0] - 2026-02-04
+
+The learning loop is now **fully automatic** - every prompt, every command,
+every session improves the playbook with zero user action.
+
+### Added
+
+- **Auto-retro at Stop** (`stop_gate.py`): when a session produced >= 2 fresh
+  learnable signals (and >= 3 turns), the Stop hook blocks once and hands the
+  model its own friction summary + the delta-op schema; the model appends
+  <= 3 high-bar proposals to `.firefly/proposals.jsonl` before finishing.
+  Once per session, fail-open, honors `stop_hook_active`.
+- **Recurrence auto-lessons** (`distill.py auto_propose`): signals recurring
+  across >= 2 distinct sessions (error patterns, repeated workflows,
+  corrections, guard denials) become quarantined lesson proposals from vetted
+  templates - fully deterministic, no LLM involved. Re-recurrence converts to
+  +1 helpful via curator dedup, so persistent patterns self-activate.
+- **Implicit feedback** (`session_end.py` + `session_start.py`): sessions
+  that end verified, correction-free, >= 3 turns emit +1 helpful for every
+  lesson injected at SessionStart (capped at 6). Two clean sessions activate
+  a trial lesson. Usage is the feedback - no thumbs required.
+- **`learning` config block** (`.firefly/config.json`): `auto_reflect`,
+  `auto_reflect_min_candidates`, `auto_reflect_min_turns`, `auto_lessons`,
+  `auto_feedback`, `min_recurrence` - all on by default, all tunable.
+- 12 new harness checks (`[auto-learning]`) - 90 total.
+
+### Changed
+
+- `session_end.py` now chains distill -> auto-propose -> implicit feedback.
+- SessionStart shows "Playbook auto-updated: N ops applied" when the curator
+  consumed proposals, and the manual-retro nudge now fires at a backlog of
+  6+ candidates (was 3) since the automatic loop skims fresh signals.
+- `/ff:retro` repositioned as the optional **deep pass** over the full
+  backlog; `/ff:onboard`, README, ARCHITECTURE, SELF-IMPROVEMENT, ADOPTION,
+  PERSONAS updated to describe the automatic-first loop.
+
 ## [1.0.0] - 2026-02-04
 
 First public release.

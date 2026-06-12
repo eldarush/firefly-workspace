@@ -1,8 +1,12 @@
-"""SessionEnd hook: distill the finished session into improvement candidates.
+"""SessionEnd hook: close the automatic learning loop for this session.
 
-Runs the deterministic distiller (no LLM) over session state + events, then
-logs a session summary event. Heavyweight reflection happens later via
-/ff:retro, with a human in the loop. Fail-open always.
+1. Distill session state + events into improvement candidates (no LLM).
+2. auto_propose: signals recurring across sessions become quarantined lesson
+   proposals deterministically.
+3. implicit_feedback: a verified, correction-free session gives +1 helpful to
+   every lesson that was injected at SessionStart.
+All proposals are applied by the curator at the next SessionStart. /ff:retro
+remains the manual deep pass. Fail-open always.
 """
 
 import os
@@ -16,12 +20,21 @@ def main():
     import distill
 
     payload = ff.read_hook_input()
+    cfg = ff.load_config(payload)
     sid = payload.get("session_id", "unknown")
     st = ff.load_state(payload, sid)
 
-    new = 0
+    new = auto = fb = 0
     try:
         new = distill.distill_session(payload, st)
+    except Exception:
+        pass
+    try:
+        auto = distill.auto_propose(payload, cfg)
+    except Exception:
+        pass
+    try:
+        fb = distill.implicit_feedback(payload, st, cfg)
     except Exception:
         pass
 
@@ -29,7 +42,9 @@ def main():
                  reason=payload.get("reason", ""),
                  turns=st.get("turns", 0),
                  corrections=st.get("corrections", 0),
-                 candidates=new or None)
+                 candidates=new or None,
+                 auto_lessons=auto or None,
+                 auto_feedback=fb or None)
 
 
 if __name__ == "__main__":

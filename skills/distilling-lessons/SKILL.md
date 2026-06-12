@@ -8,7 +8,7 @@ description: Use when reviewing session friction or wins to extract durable play
 
 ## Sources
 
-Read `.firefly/candidates.jsonl` - contains: error streaks, repeated commands, corrections by human, guard denials, wins. Review after sessions with notable friction or novel solutions.
+Read `.firefly/candidates.jsonl` - contains: error streaks, repeated commands, corrections by human, guard denials, wins. The automatic loop (auto-retro at Stop, recurrence auto-lessons at SessionEnd) skims fresh signals using THIS same schema and quality bar; the manual deep pass reviews the whole backlog.
 
 ## Quality Bar per Lesson
 

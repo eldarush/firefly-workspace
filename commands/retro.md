@@ -1,14 +1,15 @@
 ---
-description: Retrospective - turn captured friction into playbook lessons (the self-improvement loop)
+description: Deep retrospective - sweep the full candidate backlog into playbook lessons (the automatic loop only skims fresh signals)
 argument-hint: "[optional focus, e.g. 'this session' or 'helm failures']"
 disable-model-invocation: true
 ---
 
-Run a Firefly retrospective: $ARGUMENTS
+Run a Firefly deep retrospective: $ARGUMENTS
 
-This is the heart of the self-improvement loop: hooks captured friction into
-`.firefly/candidates.jsonl`; you now distill it into playbook proposals that
-the deterministic curator will apply.
+Learning runs automatically (auto-retro at session close, recurrence
+auto-lessons, implicit feedback). THIS command is the manual deep pass: it
+reviews the WHOLE backlog with the reflector agent and the human in the loop,
+catching cross-session patterns the automatic skim misses.
 
 1. **Gather**: read `.firefly/candidates.jsonl` (entries with status "new")
    and `.firefly/playbook.json`. If there are no new candidates, also consider
@@ -34,5 +35,6 @@ the deterministic curator will apply.
    immediately via human approval in `/ff:lessons`). Mention any skill
    suggestions the reflector made (`/ff:skillgen`).
 
-Cadence: run after any painful session, or when the SessionStart notice shows
-pending candidates. Takes ~2 minutes; compounds forever.
+Cadence: when SessionStart reports an accumulated backlog (>= 6 candidates),
+after an especially painful week, or before promoting lessons to the team
+repo. Takes ~2 minutes; compounds forever.

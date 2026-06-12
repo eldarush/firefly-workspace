@@ -21,6 +21,14 @@
     "max_inject": 6,
     "max_inject_tokens": 1200
   },
+  "learning": {
+    "auto_reflect": true,
+    "auto_reflect_min_candidates": 2,
+    "auto_reflect_min_turns": 3,
+    "auto_lessons": true,
+    "auto_feedback": true,
+    "min_recurrence": 2
+  },
   "docs": {
     "kiwix_url": "http://wikiall.internal:8090",
     "extra_sources": [

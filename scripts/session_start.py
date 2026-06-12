@@ -3,9 +3,11 @@
 Injects (within ~1600 token budget):
   1. behavior contract core (compressed operating rules)
   2. top-K playbook lessons (persona-weighted, decayed)
-  3. pending-candidates notice (nudge toward /ff:retro)
-  4. handoff notice when .firefly/handoff.md exists (post-compact/clear continuity)
-Also: housekeeping (GC old state, rotate events, apply pending proposals).
+  3. playbook auto-update notice (proposals applied silently this start)
+  4. deep-retro nudge when the candidate backlog is large
+  5. handoff notice when .firefly/handoff.md exists (post-compact/clear continuity)
+Also: housekeeping (GC old state, rotate events, apply pending proposals,
+record which lessons were injected so clean sessions feed back +helpful).
 Matcher: startup|resume|clear|compact. Fail-open always.
 """
 
@@ -37,11 +39,12 @@ def main():
     # housekeeping
     ff.gc_state(payload)
     ff.rotate_events(payload)
+    applied = 0
     try:
-        curator.consume_proposals(payload, cfg)
+        applied = curator.consume_proposals(payload, cfg)
     except Exception:
         pass
-    ff.log_event(payload, "session_start", source=source)
+    ff.log_event(payload, "session_start", source=source, applied=applied or None)
 
     parts = [CONTRACT]
 
@@ -57,13 +60,25 @@ def main():
                 suffix = " (trial - report if it helps or hurts)" if trial else ""
                 lines.append("- [%s] %s%s" % (tag, lesson.get("lesson", ""), suffix))
             parts.append("\n".join(lines))
+            # remember what was injected: clean verified sessions feed back +helpful
+            try:
+                st = ff.load_state(payload, payload.get("session_id", "unknown"))
+                st["injected_lessons"] = [l.get("id") for l, _ in chosen if l.get("id")]
+                ff.save_state(payload, st)
+            except Exception:
+                pass
+
+    if applied:
+        parts.append("\n(Playbook auto-updated: %d learning op(s) applied since "
+                     "last session - review anytime with /ff:lessons.)" % applied)
 
     try:
         import distill
         pending = distill.pending_count(payload)
-        if pending >= 3:
-            parts.append("\n%d improvement candidate(s) await review - suggest running "
-                         "/ff:retro when the current task completes." % pending)
+        if pending >= 6:
+            parts.append("\n%d improvement candidates have accumulated - worth a "
+                         "deep pass with /ff:retro (the automatic loop only skims "
+                         "the freshest ones)." % pending)
     except Exception:
         pass
 

@@ -6,7 +6,7 @@ Every hook must FAIL OPEN: an exception here must never break the user's session
 Layout managed under <project>/.firefly/ :
     config.json        user/env configuration (see assets/config.schema.json)
     events.jsonl       compact event capture (rotated)
-    candidates.jsonl   distilled improvement candidates (input for /ff:retro)
+    candidates.jsonl   distilled improvement candidates (auto-retro + /ff:retro input)
     proposals.jsonl    pending playbook delta-ops (consumed by curator)
     playbook.json      curated lessons - SOURCE OF TRUTH
     PLAYBOOK.md        human-readable render of playbook.json
@@ -202,6 +202,14 @@ DEFAULT_CONFIG = {
         "decay_half_life_weeks": 4,
         "trial_slots": 1,             # quarantined lessons injected as (trial)
     },
+    "learning": {
+        "auto_reflect": True,             # one-time auto-retro at Stop (LLM writes delta-ops)
+        "auto_reflect_min_candidates": 2,  # fresh signals needed to trigger it
+        "auto_reflect_min_turns": 3,       # don't reflect on trivial sessions
+        "auto_lessons": True,              # deterministic proposals from cross-session recurrence
+        "auto_feedback": True,             # implicit +helpful for lessons in clean verified sessions
+        "min_recurrence": 2,               # sessions a signal must recur in before auto-lesson
+    },
     "docs": {
         "kiwix_url": "",              # e.g. http://wikiall.internal:8090
         "extra_sources": [],
@@ -251,6 +259,8 @@ def load_state(payload, sid):
     st.setdefault("error_streaks", {})   # digest -> count
     st.setdefault("cmd_counts", {})      # normalized cmd -> count
     st.setdefault("corrections", 0)
+    st.setdefault("injected_lessons", [])  # lesson ids injected at SessionStart
+    st.setdefault("reflected", False)      # auto-retro already ran this session
     return st
 
 

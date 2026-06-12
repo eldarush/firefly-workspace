@@ -1,6 +1,6 @@
 ---
 name: reflector
-description: Retrospective analyst for the self-improvement loop. Use via /ff:retro - reviews captured friction candidates and writes playbook delta-ops as proposals. Never edits the playbook directly.
+description: Retrospective analyst for the /ff:retro deep pass - reviews the full friction backlog and writes playbook delta-ops as proposals, never editing the playbook. The everyday loop runs automatically at session close.
 model: inherit
 disallowedTools: Edit, MultiEdit, NotebookEdit
 ---

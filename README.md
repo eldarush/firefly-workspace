@@ -30,24 +30,43 @@ by ad-hoc prompts. This plugin is that harness.
 | **Guardrails** (8 hooks) | destructive commands denied, production contexts read-only, verification stop-gate, error-streak detection, prompt coaching, compaction handoff - all Python stdlib, all fail-open |
 | **Memory** (`.firefly/`) | a curated lesson playbook with helpful/harmful counters, decay, quarantine, and human governance - injected into every session |
 
-## The self-improvement loop
+## The self-improvement loop (fully automatic)
+
+Every prompt, every command, every session feeds the loop - **no commands
+required**:
 
 ```mermaid
 flowchart LR
-    A[Hooks capture friction\nerrors, corrections, repetition] --> B[SessionEnd distills\ncandidates.jsonl]
-    B --> C["/ff:retro\nreflector agent proposes delta-ops"]
+    A[Hooks capture friction\nevery prompt and command] --> B[Distiller mines signals\nat Stop + SessionEnd]
+    B --> C[Auto-retro at Stop\nmodel distills its own session\nonce, while context is warm]
+    B --> C2[Recurrence engine\nsignals repeating across sessions\nbecome lessons deterministically]
     C --> D[curator.py applies\ndedup, decay, quarantine, caps]
+    C2 --> D
     D --> E[SessionStart injects\ntop lessons, budgeted]
-    E --> F[Better sessions]
+    E --> F[Clean verified sessions\nauto-reinforce injected lessons]
     F --> A
     D --> G["/ff:skillgen\nrepeated workflows become skills"]
     G -. auditor screens, human approves .-> H[Team skill library]
 ```
 
-Everything automated is **deterministic** (a Python script applies the memory
-updates - the LLM only proposes). Everything durable is **human-governed**
-(`/ff:lessons` is the law book; new auto-lessons start quarantined until they
-prove themselves). The loop runs with zero maintenance effort.
+Three automatic learning paths, layered:
+
+1. **Auto-retro at Stop** - when a session generated >= 2 learnable signals,
+   the Stop hook asks the model (once) to distill them into <= 3 playbook
+   delta-ops before finishing. The session that hit the friction writes the
+   lesson, while its context is still warm.
+2. **Recurrence auto-lessons** - the same error/workflow/correction pattern
+   appearing across >= 2 sessions becomes a quarantined lesson from a vetted
+   template. No LLM involved at all.
+3. **Implicit feedback** - sessions that end verified and correction-free
+   give +1 helpful to every lesson that was injected. Two clean sessions
+   activate a trial lesson. Usage IS the feedback.
+
+Everything automated is **deterministic where it matters** (a Python script
+applies all memory updates - the LLM only proposes). Everything durable is
+**human-governed** (`/ff:lessons` is the law book; auto-lessons start
+quarantined until they prove themselves). `/ff:retro` remains as the manual
+deep pass over the full backlog. Zero maintenance effort.
 
 ## Install
 
@@ -94,8 +113,11 @@ needed at runtime, ever.
 /ff:implement                                       # step-by-step, verification-gated
 /ff:review                                          # independent clean-context review
 /ff:commit                                          # disciplined commit
-/ff:retro                                           # 2 minutes; the plugin gets smarter
 ```
+
+Learning happens by itself: friction captured every prompt, lessons distilled
+at session close, reinforced by clean sessions. `/ff:retro` is the optional
+deep pass when the backlog grows.
 
 Plus: `/ff:debug` (hypothesis-driven root-causing), `/ff:research` (offline
 docs deep-dive via Kiwix/WikiAll), `/ff:parallel` (best-of-N bake-offs),

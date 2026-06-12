@@ -38,7 +38,7 @@ Typical loop:
 ```text
 /ff:plan add contract tests for the provisioning operator's upgrade path
 /ff:parallel 3 strategies for seeding test data in the QaaS harness
-/ff:retro   # flaky-test patterns become team lessons
+# flaky-test patterns become team lessons automatically at session close
 ```
 
 ## DEV
@@ -84,4 +84,5 @@ airgap-native answer to "just google it").
 - Skill availability is not persona-gated (knowledge is cheap when unused);
   the persona list weights **lesson injection** and tunes `/ff:onboard`.
 - Add org-specific skills under `skills/` in your internal fork - or better,
-  let the loop earn them: repeated friction -> `/ff:retro` -> `/ff:skillgen`.
+  let the loop earn them: repeated friction auto-distills into lessons, and
+  recurring workflows surface as `/ff:skillgen` candidates.

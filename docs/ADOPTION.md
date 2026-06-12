@@ -23,8 +23,8 @@ first-pass useful rate (gut estimate), retries per task. Install nothing yet.
 **Weeks 1-2 - pilot with 2 architects.** Install via internal mirror
 (`docs/INSTALL-airgapped.md`), `/ff:init` on one real repo each,
 `/ff:onboard` together. Rule of the fortnight: every non-trivial task starts
-with `/ff:plan`. End each significant session with `/ff:retro`. The platform
-team watches `.firefly/PLAYBOOK.md` fill up.
+with `/ff:plan`. Learning happens automatically at every session close; the
+platform team just watches `.firefly/PLAYBOOK.md` fill up.
 
 **Weeks 3-4 - convert friction to assets.** Review pilot lessons; promote
 2-3 recurring workflows into skills with `/ff:skillgen` (e.g. "add a QaaS

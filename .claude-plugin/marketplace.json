@@ -11,7 +11,7 @@
       "source": "./",
       "displayName": "Firefly Workspace",
       "description": "Self-improving, safety-guarded Claude Code workspace for SRE, QA, DEV and Research teams in airgapped environments.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "Firefly Team"
       },

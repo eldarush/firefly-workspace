@@ -33,14 +33,14 @@ flowchart TB
 
 | Event | Script | Effect |
 |---|---|---|
-| SessionStart (startup/resume/clear/compact) | `session_start.py` | housekeeping, apply proposals, inject contract + top lessons + handoff (<= 1600 tok) |
+| SessionStart (startup/resume/clear/compact) | `session_start.py` | housekeeping, apply proposals, inject contract + top lessons + handoff (<= 1600 tok), record injected lesson ids |
 | UserPromptSubmit | `prompt_submit.py` | turn count, correction detection + nudge, task-frame injection (rate-limited 1/8 turns), apply proposals |
 | PreToolUse (Bash) | `pre_tool_guard.py` | destroy -> deny; mutate-in-protected -> deny; audit |
 | PostToolUse (*) | `tool_event.py` | flight recorder: edits, verify runs, error streaks (nudge at 2), command repetition |
 | SubagentStop | `tool_event.py` | event log |
-| Stop | `stop_gate.py` | block premature "done" when edits are unverified (max 2/session, honors `stop_hook_active`) |
+| Stop | `stop_gate.py` | block premature "done" when edits are unverified (max 2/session); then auto-retro: once per session, hand fresh signals to the model to distill into playbook proposals |
 | PreCompact (manual/auto) | `precompact.py` | write `.firefly/handoff.md` snapshot |
-| SessionEnd | `session_end.py` | run the distiller -> candidates |
+| SessionEnd | `session_end.py` | distiller -> candidates; recurrence auto-lessons; implicit +helpful feedback for injected lessons in clean verified sessions |
 
 All scripts: Python 3.8+ stdlib, LF endings, fail-open (`except: exit 0`),
 budgeted output. GA-era hook events only - no version-fragile features.
@@ -77,7 +77,9 @@ budgeted output. GA-era hook events only - no version-fragile features.
 /ff:review -> evaluator (spec+diff only, clean context) -> triage -> fixes
 /ff:commit -> diff hygiene -> verified commit
 (throughout: tool_event records; guard protects; corrections counted)
-/ff:retro -> reflector -> proposals -> curator -> next session is smarter
+(at stop: auto-retro distills this session's friction into proposals)
+(at end: recurring patterns -> auto-lessons; clean session -> +helpful)
+-> curator applies everything -> next session starts smarter, automatically
 ```
 
 ## Repository = marketplace + plugin

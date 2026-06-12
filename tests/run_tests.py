@@ -195,6 +195,13 @@ def main():
     print("project: %s" % project)
     print("python : %s" % PY)
 
+    # Disable Stop-hook auto-retro for the legacy gate tests; the dedicated
+    # [auto-learning] section re-enables it explicitly.
+    os.makedirs(os.path.join(project, ".firefly"), exist_ok=True)
+    cfg_path = os.path.join(project, ".firefly", "config.json")
+    with open(cfg_path, "w", encoding="utf-8") as f:
+        json.dump({"learning": {"auto_reflect": False}}, f)
+
     try:
         # ---------------- session_start -------------------------------
         print("\n[session_start]")
@@ -400,6 +407,93 @@ def main():
         chosen = curator.select_for_injection(payload)
         ids = [l["id"] for l, _ in chosen]
         check("injection includes active human lesson", human["id"] in ids, str(ids))
+
+        # ---------------- automatic learning ---------------------------
+        print("\n[auto-learning]")
+        import distill  # noqa: E402
+        cand_path = os.path.join(project, ".firefly", "candidates.jsonl")
+
+        # (a) cross-session recurrence -> deterministic proposals
+        with open(cand_path, "a", encoding="utf-8") as f:
+            for sid_n in ("sess-a", "sess-b"):
+                f.write(json.dumps({
+                    "ts": "2026-01-01T00:00:00Z", "sid": sid_n, "kind": "friction",
+                    "key": "err:deadbeef01", "status": "new",
+                    "summary": "Same error repeated 2x (digest deadbeef01).",
+                    "evidence": ["ImagePullBackOff: registry.internal timeout"],
+                }) + "\n")
+                f.write(json.dumps({
+                    "ts": "2026-01-01T00:00:00Z", "sid": sid_n, "kind": "behavior",
+                    "key": "corr:" + sid_n, "status": "new",
+                    "summary": "User corrected the assistant 2 times.",
+                    "evidence": [],
+                }) + "\n")
+        n_auto = distill.auto_propose(payload)
+        check("auto_propose emits 2 ops (err + behavior)", n_auto == 2, "n=%s" % n_auto)
+        props_rows = [json.loads(l) for l in open(props, encoding="utf-8") if l.strip()]
+        check("auto ops are adds with origin auto", all(
+            r["op"] == "add" and r.get("origin") == "auto" for r in props_rows),
+            str(props_rows)[:200])
+        check("recurring candidates marked promoted", not [
+            c for c in distill.fresh_candidates(payload, "sess-a")
+            if c["key"].startswith(("err:", "corr:"))])
+        n_again = distill.auto_propose(payload)
+        check("auto_propose idempotent", n_again == 0, "n=%s" % n_again)
+        curator.consume_proposals(payload)
+        pb = curator.load_playbook(payload)
+        autos = [l for l in pb["lessons"] if "auto" in l.get("tags", [])]
+        check("auto lessons land quarantined", autos
+              and all(l["status"] == "quarantined" for l in autos),
+              str([(l["id"], l["status"]) for l in autos]))
+
+        # (b) implicit feedback from clean verified sessions
+        st_fb = {"session_id": "sess-fb", "turns": 5, "corrections": 0,
+                 "verify_seen": True, "last_verify": "pass",
+                 "injected_lessons": [human["id"]]}
+        n_fb = distill.implicit_feedback(payload, st_fb)
+        check("implicit feedback on clean session", n_fb == 1, "n=%s" % n_fb)
+        st_fb["corrections"] = 2
+        check("no implicit feedback when corrected",
+              distill.implicit_feedback(payload, st_fb) == 0)
+        before = [l for l in curator.load_playbook(payload)["lessons"]
+                  if l["id"] == human["id"]][0]["helpful"]
+        curator.consume_proposals(payload)
+        after = [l for l in curator.load_playbook(payload)["lessons"]
+                 if l["id"] == human["id"]][0]["helpful"]
+        check("feedback op applied (+1 helpful)", after == before + 1,
+              "%s -> %s" % (before, after))
+
+        # (c) Stop-hook auto-retro fires once per session
+        with open(cfg_path, "w", encoding="utf-8") as f:
+            json.dump({"learning": {"auto_reflect": True}}, f)
+        st_r = {"session_id": "sess-reflect", "turns": 5, "corrections": 0,
+                "edits_since_verify": 0,
+                "error_streaks": {"d1aaaaaaaaaa": 2, "d2bbbbbbbbbb": 2}}
+        ff.save_state({"cwd": project}, st_r)
+        rc, out, err = run_hook("stop_gate.py", base(project, sid="sess-reflect",
+                                hook_event_name="Stop", stop_hook_active=False),
+                                project)
+        check("auto-retro blocks with instructions", out
+              and out.get("decision") == "block"
+              and "auto-retro" in out.get("reason", "")
+              and "proposals.jsonl" in out.get("reason", ""),
+              (json.dumps(out)[:200] if out else "no output, err=" + err[:120]))
+        check("reflected flag persisted",
+              read_state(project, "sess-reflect").get("reflected") is True)
+        rc, out, _ = run_hook("stop_gate.py", base(project, sid="sess-reflect",
+                              hook_event_name="Stop", stop_hook_active=False),
+                              project)
+        check("auto-retro fires only once", not out or out.get("decision") != "block",
+              json.dumps(out)[:160] if out else "")
+        with open(cfg_path, "w", encoding="utf-8") as f:
+            json.dump({"learning": {"auto_reflect": False}}, f)
+
+        # (d) session_start records injected lesson ids for implicit feedback
+        rc, out, _ = run_hook("session_start.py", base(project, source="startup",
+                              hook_event_name="SessionStart"), project)
+        check("injected lessons recorded in state",
+              read_state(project).get("injected_lessons"),
+              str(read_state(project).get("injected_lessons")))
 
         # ---------------- lib unit checks ------------------------------
         print("\n[lib]")

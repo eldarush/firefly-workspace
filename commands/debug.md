@@ -35,4 +35,5 @@ Discipline: NO fixes before a confirmed root cause. Track everything in
    would have caught this.
 
 6. **Distill**: append one line to the state file: "lesson candidate: ..." if
-   this failure pattern is generalizable - /ff:retro will pick it up.
+   this failure pattern is generalizable - the automatic learning loop picks
+   it up at session close.

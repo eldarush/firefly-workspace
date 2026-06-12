@@ -12,9 +12,12 @@ short sections, check questions, no wall of text.
    - The plugin enforces engineering discipline mechanically: plans before
      code, verification before "done", root cause before fixes, production
      read-only by default.
-   - It LEARNS: hooks watch for friction (repeated errors, corrections,
-     repeated commands), /ff:retro distills lessons, lessons get injected into
-     future sessions. The more the team uses it, the better it gets.
+   - It LEARNS BY ITSELF: hooks watch every prompt and command for friction
+     (repeated errors, corrections, repeated commands); at session close the
+     model distills lessons automatically; recurring patterns become lessons
+     deterministically; clean verified sessions reinforce what worked. Lessons
+     are injected into future sessions. The more the team uses it, the better
+     it gets - no ceremonies required.
 
 2. **Show the state**: check whether `.firefly/config.json` exists. If not,
    offer to run /ff:init now. If yes, show: personas, verifier commands,
@@ -25,7 +28,7 @@ short sections, check questions, no wall of text.
    - `/ff:implement` -> step-by-step with verification gates
    - `/ff:review` -> independent clean-context review
    - `/ff:commit` -> disciplined commit
-   - `/ff:retro` weekly or after pain -> the plugin gets smarter
+   - learning is automatic; `/ff:retro` only for deep passes on a big backlog
 
 4. **The safety net**: explain in 3 sentences: destructive commands are denied
    outright, mutations against production contexts are blocked, everything is

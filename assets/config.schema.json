@@ -51,6 +51,18 @@
         "trial_slots": { "type": "integer", "default": 1 }
       }
     },
+    "learning": {
+      "type": "object",
+      "description": "The automatic learning loop (no commands needed).",
+      "properties": {
+        "auto_reflect": { "type": "boolean", "default": true, "description": "Once per session at Stop, ask the model to distill fresh signals into playbook delta-ops." },
+        "auto_reflect_min_candidates": { "type": "integer", "default": 2, "description": "Fresh signals required before auto-retro triggers." },
+        "auto_reflect_min_turns": { "type": "integer", "default": 3, "description": "Skip auto-retro for trivial sessions shorter than this." },
+        "auto_lessons": { "type": "boolean", "default": true, "description": "Deterministically propose lessons for signals recurring across sessions." },
+        "auto_feedback": { "type": "boolean", "default": true, "description": "Verified, correction-free sessions give +1 helpful to injected lessons." },
+        "min_recurrence": { "type": "integer", "default": 2, "description": "Distinct sessions a signal must recur in before an auto-lesson is proposed." }
+      }
+    },
     "docs": {
       "type": "object",
       "properties": {

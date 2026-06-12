@@ -1,7 +1,7 @@
 """UserPromptSubmit hook: lightweight prompt coaching + correction tracking.
 
 - counts turns; detects user corrections (signal for the distiller)
-- applies any pending playbook proposals (so /ff:retro output lands fast)
+- applies any pending playbook proposals (so auto-retro and /ff:retro output lands fast)
 - injects a ~120-token task frame when the prompt opens a new nontrivial task
   (rate-limited: at most once per 8 turns, skippable via config)
 Fail-open always; never blocks a prompt.
