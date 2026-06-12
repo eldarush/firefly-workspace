@@ -122,7 +122,7 @@ def _team_confirm(ff, payload, cfg, st):
     import team
     if not team.resolve_team_dir(payload, cfg):
         return
-    pending = team.pending_share_ops(payload, limit=3)
+    pending = team.confirmable_lessons(payload, cfg, limit=3)
     if not pending:
         return
 

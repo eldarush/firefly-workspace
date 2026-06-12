@@ -59,7 +59,7 @@ def main():
         return
 
     if "--yes" in args:
-        pending = team.pending_share_ops(payload, limit=6)
+        pending = team.confirmable_lessons(payload, cfg, limit=6)
         n = team.share_lessons(payload, cfg, pending, origin="confirmed")
         st["team_confirmed"] = "yes"
         ff.save_state(payload, st)

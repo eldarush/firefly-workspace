@@ -2,6 +2,73 @@
 
 All notable changes to Firefly Workspace.
 
+## [1.2.0] - 2026-02-05
+
+Hardened by a 100-run simulation campaign (10 waves x 10 weak-model agents
+on realistic SRE/QA/DEV/Research scenarios, independent stronger-model
+evaluator between waves, fixes committed per wave). Probe-scored quality
+rose from 0.854 (wave 1) to a 0.954 campaign best (wave 9), with zero
+destructive-bait executions and zero web-access attempts across all 100
+runs. Full data: `evals/simulation/RESULTS.md`.
+
+### Added
+
+- **Team learning store** (`scripts/team.py`): an append-only, file-based
+  lesson exchange at `.firefly-team/` (or `$FIREFLY_TEAM_DIR` - point it at
+  any shared mount) so each member's confirmed lessons improve everyone
+  else's sessions. Per-author JSONL, content-addressed ids, votes folded at
+  read time, zero servers - safe on NFS/SMB.
+- **End-of-response save confirmation** (`stop_gate.py` + `team_share.py`):
+  after auto-retro distills proposals, the Stop checkpoint asks the USER
+  once per session whether the session's lessons should be saved/shared -
+  yes shares to the team store with attribution; no records what should
+  have been done differently as a correction signal. Proven lessons
+  (helpful >= 2, never harmful) auto-share at SessionEnd without asking.
+- **Teammate attribution at SessionStart**: injected team lessons show
+  author + origin ("from maya, confirmed"), and SessionEnd folds your
+  helpful/harmful experience back as votes on the author's entry.
+- **Environment spec** (`/ff:env`, `scripts/env_spec.py`): drop one
+  `ENVIRONMENT.md` (or set `$FIREFLY_ENV_FILE`) describing your GitLab
+  URLs, clusters, registries, mirrors - every session injects a compact
+  digest and treats it as the source of truth. Works fine when absent.
+- **Verify as a first-class action**: `ff verify` runs the project's
+  registered verifier and records pass/fail in the flight recorder; the
+  Stop gate cites the tracked outcome. Verifiers auto-register from
+  observed test commands (`scripts/verifier_detect.py`).
+- **Guard dry-run + audit-record contract** (`guard --check`): classify any
+  command without executing it; the CONTRACT now frames guard verdicts as
+  the audit record for risky suggestions - especially ones you decide NOT
+  to run - and deny messages include next-step guidance. In simulation this
+  tripled spontaneous guard usage (30% -> 90%).
+- **Plan-aware prompt frames + FRAME_SHORT**: repeat prompts in a session
+  get a 3-line frame instead of the full block; frames surface the active
+  plan file when one exists.
+- **Simulation harness** (`evals/simulation/`): 8 cheat-proofed scenarios,
+  `ff_sim` lifecycle shim, 13-point objective probe, golden+control
+  selftest, wave prep/orchestration docs, and `RESULTS.md` - rerun the
+  campaign against any future change.
+- 62 new harness checks - 152 total.
+
+### Changed
+
+- SessionStart contract: TL;DR line up top; Windows consoles get a
+  `PYTHONUTF8=1` hint (cp1252 was the #1 weak-model friction); team
+  lessons section with attribution; compact env-spec digest.
+- `session_end.py` chain extended: distill -> auto-propose -> implicit
+  feedback -> team share-promoted -> team feedback votes.
+- Team checkpoint fires from 2 turns (was 3) - short focused sessions
+  (one-fix TDD runs) never reached the old gate.
+- `auto_reflect` threshold, curator caps, and team knobs all configurable
+  under `learning` / `team` in `.firefly/config.json`.
+
+### Fixed
+
+- Research scenario citation rule (s7) - synthesis questions now require
+  inline `[P1]`-style citations, closing the "right answer, no evidence"
+  gap probed in waves 5-6.
+- Console encoding crashes on Windows cp1252 consoles for hook output
+  (emoji-free, ASCII-safe rendering).
+
 ## [1.1.0] - 2026-02-04
 
 The learning loop is now **fully automatic** - every prompt, every command,

@@ -229,6 +229,53 @@ def pending_share_ops(payload, limit=3):
     return out[-limit:]
 
 
+def unshared_fresh_lessons(payload, cfg=None, limit=3):
+    """Local playbook lessons the team store has never seen and that have
+    not yet PROVEN themselves (proven ones auto-share at SessionEnd).
+
+    Needed because the curator consumes proposals.jsonl at session
+    boundaries: a lesson distilled earlier lands in the playbook as
+    quarantined/trial long before the user gets a chance to be asked, so
+    the confirm checkpoint must look at the playbook, not just at the
+    (usually empty) proposals file. Human-seeded lessons are excluded -
+    the user wrote those, there is nothing to confirm."""
+    cfg = cfg or ff.load_config(payload)
+    team_dir = resolve_team_dir(payload, cfg)
+    if not team_dir:
+        return []
+    thr = int((cfg.get("team", {}) or {}).get("share_threshold", 2))
+    import curator
+    try:
+        pb = curator.load_playbook(payload)
+    except Exception:
+        return []
+    known = set(load_team(team_dir)["lessons"])
+    out = []
+    for l in pb.get("lessons", []):
+        if l.get("origin") == "human":
+            continue
+        if l.get("status") not in ("quarantined", "trial", "active"):
+            continue
+        if l.get("helpful", 0) >= thr and l.get("harmful", 0) == 0:
+            continue  # proven: SessionEnd auto-share path owns it
+        if lesson_id(l.get("lesson", "")) in known:
+            continue
+        out.append({"lesson": l.get("lesson", ""),
+                    "scope": l.get("scope", "global"),
+                    "tags": l.get("tags", [])})
+    return out[-limit:]
+
+
+def confirmable_lessons(payload, cfg=None, limit=3):
+    """Everything the stop-hook checkpoint may ask the user to share:
+    pending proposals first (not yet curated), else fresh unshared
+    playbook lessons (already curated, never confirmed to the team)."""
+    pending = pending_share_ops(payload, limit=limit)
+    if pending:
+        return pending
+    return unshared_fresh_lessons(payload, cfg, limit=limit)
+
+
 def share_promoted(payload, cfg=None):
     """SessionEnd auto-share: locally PROVEN lessons go to the team silently.
     A lesson qualifies once active with helpful >= team.share_threshold and

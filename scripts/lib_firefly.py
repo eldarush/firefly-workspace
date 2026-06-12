@@ -584,6 +584,18 @@ def classify_command(cmd, cfg=None):
     """Return (klass, reason) where klass in read|mutate|destroy|other.
     The MOST dangerous classification across sub-commands wins."""
     cfg = cfg or DEFAULT_CONFIG
+    # pipe-aware pass FIRST: split_shell cuts on '|', which would hide
+    # pipe-to-shell installers (curl ... | sh) from the fragment loop.
+    # Only pipe-dependent destroy patterns + explicit user denies run
+    # against the whole line; everything else stays per-fragment so that
+    # `.*` patterns cannot overreach across `;` boundaries.
+    for rx in (cfg.get("deny_extra", []) or []) + [
+            r for r in DESTROY_RES if r"\|" in r]:
+        try:
+            if re.search(rx, cmd or ""):
+                return "destroy", "matched: %s" % rx
+        except re.error:
+            continue
     klass, reason = "other", ""
     rank = {"other": 0, "read": 0, "mutate": 1, "destroy": 2}
     for frag in split_shell(cmd):
