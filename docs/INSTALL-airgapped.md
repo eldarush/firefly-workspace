@@ -115,8 +115,8 @@ contexts/namespaces, personas), appends the behavior contract to `CLAUDE.md`
 
 Before promoting a new plugin version internally:
 
-- [ ] `python3 tests/run_tests.py` green on a Linux container
 - [ ] `claude plugin validate .` green (where claude CLI exists)
+- [ ] Dry-run checks of the command guard with typical commands (e.g., `python3 scripts/pre_tool_guard.py --check "kubectl delete ns prod"`) are verified blocked
 - [ ] diff-review of `scripts/` and `hooks/hooks.json` since last tag
       (these execute on every machine)
 - [ ] version bumped in `.claude-plugin/plugin.json` + `marketplace.json`,

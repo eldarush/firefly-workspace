@@ -182,33 +182,30 @@ docs deep-dive via Kiwix/WikiAll), `/ff:parallel` (best-of-N bake-offs),
 
 ```
 .claude-plugin/      plugin.json + marketplace.json (this repo IS a marketplace)
-commands/            14 workflow commands  -> /ff:*
+commands/            15 workflow commands  -> /ff:*
 agents/              7 specialist subagents
 skills/              25 skills (discipline, self-improvement, personas)
 hooks/hooks.json     8 lifecycle hooks
 scripts/             Python stdlib hook engine (lib, curator, distiller, 8 entry points)
 assets/              config schema/example, CLAUDE.md contract snippet, doc templates
-evals/               prompt-injection corpus + 100-run simulation harness
-docs/                architecture, safety, self-improvement, personas, airgap install, adoption
-tests/run_tests.py   offline test harness (160 checks, no dependencies)
+docs/                architecture, safety, self-improvement, personas, airgap install, developer guide, adoption
 ```
 
 ## Validate
 
 ```bash
-python3 tests/run_tests.py     # full harness: hooks, curator, guard, structure
 claude plugin validate .       # manifest check (when claude CLI is available)
 ```
 
 ## Docs
 
+- [Developer Guide](docs/DEVELOPER-GUIDE.md) - how to customize, extend, and maintain Firefly
 - [Architecture](docs/ARCHITECTURE.md) - components, data flow, design decisions
 - [Self-improvement](docs/SELF-IMPROVEMENT.md) - the lesson lifecycle in depth
 - [Safety](docs/SAFETY.md) - guard policy, risk classes, audit, config
 - [Personas](docs/PERSONAS.md) - SRE / QA / DEV / Research usage patterns
 - [Airgapped install](docs/INSTALL-airgapped.md) - mirroring, managed settings, release checklist
 - [Adoption playbook](docs/ADOPTION.md) - rolling it out to a skeptical team, ROI metrics
-- [Simulation results](evals/simulation/RESULTS.md) - 100 weak-model runs, score trend, what actually moved the needle
 
 ## Design commitments
 

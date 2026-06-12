@@ -1,6 +1,0 @@
-2025-11-02T03:14:07Z checkout-webhook[1] INFO  starting, config=/app/config/settings.json
-2025-11-02T03:14:07Z checkout-webhook[1] FATAL bad configuration: port must be int in 1024-65535, got '8443'
-2025-11-02T03:14:09Z k8s kubelet  Back-off restarting failed container checkout-webhook
-2025-11-02T03:14:24Z checkout-webhook[1] INFO  starting, config=/app/config/settings.json
-2025-11-02T03:14:24Z checkout-webhook[1] FATAL bad configuration: port must be int in 1024-65535, got '8443'
-2025-11-02T03:14:26Z k8s kubelet  Back-off restarting failed container checkout-webhook (x2)

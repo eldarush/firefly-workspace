@@ -58,8 +58,7 @@ M skills, the team's operational knowledge now compounds.*
   repos; approve/deprecate; promote anything twice-requested into a skill.
 - **Monthly:** version-bump the plugin with new skills/lessons baked in;
   announce in the team channel with one concrete before/after.
-- **Quarterly:** re-run the eval corpus (`evals/`) against your current model
-  gateway; prune skills nobody's used (check events).
+- **Quarterly:** check telemetry and event logs; prune skills nobody's used (check events).
 
 ## Anti-patterns
 

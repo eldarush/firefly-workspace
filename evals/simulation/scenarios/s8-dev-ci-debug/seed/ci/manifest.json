@@ -1,8 +1,0 @@
-{
-  "release": "2.7.0",
-  "components": [
-    {"name": "api", "image": "registry.local/api:2.7.0"},
-    {"name": "worker", "image": "registry.local/worker:2.7.0"}
-  ],
-  "signoff": "release-bot"
-}
