@@ -26,8 +26,10 @@ def evaluate(cmd, cfg):
     why = ""
     if klass == "destroy":
         decision = "ask" if beh.get("destroy") == "ask" else "deny"
-        why = ("Firefly guard: destructive command blocked (%s). If genuinely needed, "
-               "the USER must run it themselves or adjust .firefly/config.json "
+        why = ("Firefly guard: destructive command blocked (%s). Record this "
+               "verdict where you document the decision and proceed with a "
+               "safer alternative. If genuinely needed, the USER must run it "
+               "themselves or adjust .firefly/config.json "
                "(behavior.destroy / allow_extra)." % (reason or "destroy class"))
     elif klass == "mutate" and protected:
         decision = "ask" if beh.get("mutate_in_protected") == "ask" else "deny"

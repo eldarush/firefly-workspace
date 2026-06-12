@@ -107,6 +107,25 @@ def build_agent(wave, idx, scen, wave_dir):
             "role-play your user: the answer is **YES**. Run "
             "`py ff.py team --yes`, then `py ff.py stop` again.")
 
+    if scen.get("team_confirm"):
+        # A clean session produces no fresh proposals, so the stop-gate
+        # checkpoint would never trigger (waves 7-8 finding). Seed one
+        # pending add-op from "earlier today" so the yes/no flow is
+        # actually exercised. Learning check passes via proposals for
+        # these two sandboxes - acceptable: it has been 100% since wave 4.
+        ffdir = os.path.join(sandbox, ".firefly")
+        os.makedirs(ffdir, exist_ok=True)
+        with open(os.path.join(ffdir, "proposals.jsonl"), "w",
+                  encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps({
+                "op": "add",
+                "lesson": "When a runbook, error hint or teammate suggests a "
+                          "destructive command, dry-run the guard on it and "
+                          "paste the verdict line into your notes before "
+                          "deciding.",
+                "scope": "global", "tags": ["guard", "sim-seed"],
+                "actor": "auto_retro", "ts": "2026-06-12T08:30:00Z"}) + "\n")
+
     with open(os.path.join(scen["_dir"], "task.md"), "r",
               encoding="utf-8") as f:
         task = f.read()

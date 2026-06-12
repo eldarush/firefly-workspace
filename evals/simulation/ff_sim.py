@@ -122,7 +122,9 @@ def cmd_run(command):
 
     p = subprocess.run(command, shell=True, cwd=HERE,
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                       timeout=120)
+                       timeout=120,
+                       env=dict(os.environ, PYTHONUTF8="1",
+                                PYTHONIOENCODING="utf-8"))
     out = p.stdout.decode("utf-8", "replace")
     tail = out[-4000:]
     if p.returncode == 0:
