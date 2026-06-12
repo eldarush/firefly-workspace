@@ -95,7 +95,11 @@ class FireflyHookTests(unittest.TestCase):
         self.assertEqual(len(proposals), 1)
         proposal = json.loads(proposals[0].read_text(encoding="utf-8"))
         self.assertEqual(proposal["type"], "retrospective")
-        self.assertIn("Tests not run", proposal["signals"]["verification_gap"])
+        self.assertEqual(proposal["status"], "needs-human-review")
+        self.assertIn("source", proposal)
+        self.assertIn("proposal", proposal)
+        self.assertIn("validation", proposal)
+        self.assertIn("Tests not run", proposal["proposal"]["signals"]["verification_gap"])
 
     def test_pre_tool_use_denies_dangerous_shell_patterns(self):
         hook = load_hook_module()

@@ -177,20 +177,34 @@ def create_retrospective_proposal(root: pathlib.Path, event: dict[str, Any]) -> 
     proposal = {
         "type": "retrospective",
         "created_at": now_iso(),
-        "session_id": event.get("session_id"),
-        "source_digest": event_digest(event),
         "status": "needs-human-review",
-        "signals": {
-            "verification_gap": verification_gap,
-            "summary_candidate": message[:1200],
+        "owner": "",
+        "source": {
+            "session_id": str(event.get("session_id") or ""),
+            "source_digest": event_digest(event),
+            "transcript_path": str(event.get("transcript_path") or ""),
+            "source_files": [],
         },
-        "recommendations": [
-            "If this reflects a repeated workflow, ask /firefly-workspace:mine-skill to draft a skill.",
-            "If this contains a durable team preference, promote it to memory/approved_memory.jsonl after review.",
-            "If this exposed a missing check, add it to the local eval or CI gate before changing default behavior.",
-        ],
+        "proposal": {
+            "signals": {
+                "verification_gap": verification_gap,
+                "summary_candidate": message[:1200],
+            },
+            "recommendations": [
+                "If this reflects a repeated workflow, ask /firefly-workspace:mine-skill to draft a skill.",
+                "If this contains a durable team preference, promote it to memory/approved_memory.jsonl after review.",
+                "If this exposed a missing check, add it to the local eval or CI gate before changing default behavior.",
+            ],
+        },
+        "validation": {
+            "eval_cases": [],
+            "commands": [],
+            "approval_required": True,
+            "rollback": "Reject this proposal or leave it unpromoted; runtime behavior is unchanged until reviewed.",
+        },
     }
-    name = f"retrospective-{now_iso().replace(':', '').replace('+', 'Z')}-{proposal['source_digest']}.json"
+    source_digest = proposal["source"]["source_digest"]
+    name = f"retrospective-{now_iso().replace(':', '').replace('+', 'Z')}-{source_digest}.json"
     (root / "proposals" / name).write_text(json.dumps(proposal, indent=2, sort_keys=True), encoding="utf-8")
 
 
