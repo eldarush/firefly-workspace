@@ -10,6 +10,7 @@ Usage (always run from the sandbox directory):
     py ff.py start                  SessionStart  -> prints injected context
     py ff.py prompt "text"          UserPromptSubmit (counts a turn)
     py ff.py run "shell command"    PreToolUse guard -> execute -> PostToolUse
+    py ff.py guard "shell command"  DRY-RUN policy check (never executes)
     py ff.py edited <path>          PostToolUse Edit (after editing a file)
     py ff.py stop                   Stop (verification gate / auto-retro)
     py ff.py stop --again           Stop with stop_hook_active=true
@@ -127,6 +128,20 @@ def cmd_run(command):
     sys.exit(p.returncode)
 
 
+def cmd_guard(command):
+    """Dry-run a command against the Firefly guard without executing it."""
+    env = dict(os.environ)
+    env["CLAUDE_PROJECT_DIR"] = HERE
+    env["CLAUDE_PLUGIN_ROOT"] = PLUGIN
+    env["FF_SESSION_ID"] = SID
+    p = subprocess.run(
+        [PY, os.path.join(PLUGIN, "scripts", "pre_tool_guard.py"),
+         "--check", command],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
+        cwd=HERE, timeout=60)
+    sys.stdout.write(p.stdout.decode("utf-8", "replace"))
+
+
 def cmd_edited(path):
     hook("tool_event.py", {"hook_event_name": "PostToolUse",
                            "tool_name": "Edit",
@@ -166,6 +181,11 @@ def main():
             print("usage: py ff.py run \"<command>\"")
             sys.exit(1)
         cmd_run(args[1])
+    elif op == "guard":
+        if len(args) < 2:
+            print("usage: py ff.py guard \"<command>\"")
+            sys.exit(1)
+        cmd_guard(args[1])
     elif op == "edited":
         cmd_edited(args[1] if len(args) > 1 else "")
     elif op == "stop":

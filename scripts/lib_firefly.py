@@ -362,6 +362,17 @@ VERIFY_RE = re.compile(
     r"|(python3?|py) -m (pytest|unittest|compileall)|gitlab-ci-local)\b"
 )
 
+# custom project verifiers: scripts/flags that look like checks. Matched
+# commands are auto-registered into .firefly/config.json verify.commands
+# so the whole loop (stop-gate, distill) tracks the project's real verifier.
+VERIFY_HEUR_RE = re.compile(
+    r"(--(self-?check|verify|validate|health-?check|smoke)\b"
+    r"|(^|[\s/\\])(verify|self_?check|run_ci|run_checks|health_?check|"
+    r"smoke(_test)?|validate|preflight)[\w-]*\.(py|sh|ps1)\b"
+    r"|\bmake (verify|smoke|validate)\b)",
+    re.IGNORECASE,
+)
+
 CORRECTION_RE = re.compile(
     r"^(no[,. ]|not (what|that|like)|that'?s (wrong|not)|wrong\b|undo\b|revert\b"
     r"|stop\b|don'?t\b|incorrect\b|actually[, ]|again\b|still (broken|failing|wrong)"
@@ -376,7 +387,31 @@ def is_verify_command(cmd, cfg=None):
     for c in ((cfg or {}).get("verify", {}) or {}).get("commands", []):
         if c and c in cmd:
             return True
-    return bool(VERIFY_RE.search(cmd))
+    return bool(VERIFY_RE.search(cmd) or VERIFY_HEUR_RE.search(cmd))
+
+
+def register_verifier(payload, cmd):
+    """Persist a heuristically-detected project verifier into the project
+    config so future sessions recognize it exactly. Additive, deduped,
+    capped. Fail-open."""
+    try:
+        path = os.path.join(firefly_dir(payload), "config.json")
+        raw = {}
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                raw = json.load(f) or {}
+        ver = raw.setdefault("verify", {})
+        cmds = ver.setdefault("commands", [])
+        cmd = cmd.strip()[:200]
+        if not cmd or cmd in cmds or len(cmds) >= 8:
+            return False
+        cmds.append(cmd)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(raw, f, indent=2)
+            f.write("\n")
+        return True
+    except Exception:
+        return False
 
 
 def is_code_file(path, cfg=None):

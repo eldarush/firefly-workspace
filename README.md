@@ -144,7 +144,15 @@ docs deep-dive via Kiwix/WikiAll), `/ff:parallel` (best-of-N bake-offs),
   (default `*prod*`) - **denied**; elsewhere Claude Code's normal permission
   flow applies. Read-only diagnosis is always open.
 - Every guard decision and playbook mutation is appended to
-  `.firefly/audit.log`.
+  `.firefly/audit.log`; every screened command (including allows) lands in
+  `.firefly/events.jsonl` (`guard_check`).
+- **Dry-run check**: test any command against policy without executing it -
+  `python3 $CLAUDE_PLUGIN_ROOT/scripts/pre_tool_guard.py --check "<cmd>"`.
+- **Verifier auto-registration**: custom check commands (`py run_ci.py`,
+  `./selfcheck.sh`, `--verify` flags, ...) are recognized heuristically and
+  pinned into `.firefly/config.json` `verify.commands` on first run, so the
+  stop-gate and learning loop track your project's real verifier with zero
+  setup.
 - Hooks **fail open**: a hook crash can never take down your session.
 - Risk-class vocabulary (R0 read-only ... R4 destructive) used across skills
   and agents. Details: [docs/SAFETY.md](docs/SAFETY.md).

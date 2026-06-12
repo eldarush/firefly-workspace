@@ -49,6 +49,15 @@ def main():
 
     parts = [CONTRACT]
 
+    # windows shells burn turns on POSIX muscle memory (wave-1 evidence:
+    # 4/10 agents tried ls/cat/python3; one lost 3 turns to the Store alias)
+    if os.name == "nt":
+        parts.append(
+            "\nWindows host: use `py` (not python/python3 - Store alias may "
+            "return exit 9009), `dir` (not ls), `type` (not cat/head), "
+            "`where` (not which). Prefer forward-compatible Python scripts "
+            "over shell one-liners.")
+
     # environment spec: the org's source of truth - pinned facts go early so
     # they survive budget pressure (the pop loop trims from the end)
     try:
@@ -81,6 +90,13 @@ def main():
     if applied:
         parts.append("\n(Playbook auto-updated: %d learning op(s) applied since "
                      "last session - review anytime with /ff:lessons.)" % applied)
+
+    if not (cfg.get("verify", {}) or {}).get("commands"):
+        parts.append(
+            "\nNo project verifier registered yet. Run your test/check "
+            "command once (e.g. pytest, `py ci/run_ci.py`, `py app.py "
+            "--selfcheck`) and Firefly will track it; or pin it in "
+            ".firefly/config.json under verify.commands.")
 
     try:
         import distill

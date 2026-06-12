@@ -64,6 +64,23 @@ def read_state(project, sid="sess-test-1"):
         return json.load(f)
 
 
+def read_events(project):
+    p = os.path.join(project, ".firefly", "events.jsonl")
+    out = []
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        out.append(json.loads(line))
+                    except Exception:
+                        pass
+    except OSError:
+        pass
+    return out
+
+
 def frontmatter(path):
     """Parse simple single-line `key: value` YAML frontmatter. Returns dict or None."""
     with open(path, "r", encoding="utf-8") as f:
@@ -263,6 +280,10 @@ def main():
         check(".firefly created", os.path.isdir(os.path.join(project, ".firefly")))
         check(".firefly self-gitignored",
               os.path.exists(os.path.join(project, ".firefly", ".gitignore")))
+        if os.name == "nt":
+            check("windows shell hint injected", "Windows host" in ctx, ctx[:200])
+        check("verifier registration hint when none configured",
+              "verifier registered" in ctx, ctx[-300:])
 
         # ---------------- prompt_submit -------------------------------
         print("\n[prompt_submit]")
@@ -325,6 +346,29 @@ def main():
                            stderr=subprocess.PIPE, env=env, timeout=30)
         check("malformed stdin fails open", p.returncode == 0)
 
+        # guard --check dry-run CLI
+        env2 = dict(os.environ)
+        env2["CLAUDE_PROJECT_DIR"] = project
+        env2["FF_SESSION_ID"] = "dryrun-1"
+        p = subprocess.run([PY, os.path.join(SCRIPTS, "pre_tool_guard.py"),
+                            "--check", "git push --force origin main"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           env=env2, cwd=project, timeout=30)
+        out_txt = p.stdout.decode("utf-8", "replace")
+        check("guard --check denies force-push without executing",
+              p.returncode == 0 and "DENY" in out_txt, out_txt[:120])
+        evs = read_events(project)
+        check("guard --check logs dry_run event",
+              any(e.get("ev") == "guard_check" and e.get("dry_run")
+                  and e.get("decision") == "deny" for e in evs))
+        p = subprocess.run([PY, os.path.join(SCRIPTS, "pre_tool_guard.py"),
+                            "--check", "git status"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           env=env2, cwd=project, timeout=30)
+        check("guard --check neutral for safe cmd",
+              p.returncode == 0 and "NEUTRAL" in
+              p.stdout.decode("utf-8", "replace"))
+
         # ---------------- tool_event ----------------------------------
         print("\n[tool_event]")
         rc, out, _ = run_hook("tool_event.py", base(project,
@@ -350,6 +394,20 @@ def main():
         st = read_state(project)
         check("verify pass resets gate", st["edits_since_verify"] == 0
               and st["last_verify"] == "pass", str(st)[:200])
+
+        # custom verifier: tracked + auto-registered into project config
+        rc, out, _ = run_hook("tool_event.py", base(project,
+                              hook_event_name="PostToolUse", tool_name="Bash",
+                              tool_input={"command": "py ci/run_ci.py"},
+                              tool_response="CI GREEN"), project)
+        st = read_state(project)
+        check("custom verifier tracked", st["last_verify"] == "pass")
+        with open(os.path.join(project, ".firefly", "config.json"),
+                  encoding="utf-8") as f:
+            pcfg = json.load(f)
+        check("custom verifier auto-registered",
+              "py ci/run_ci.py" in (pcfg.get("verify", {}) or {})
+              .get("commands", []), str(pcfg)[:200])
 
         # ---------------- stop_gate -----------------------------------
         print("\n[stop_gate]")
@@ -555,6 +613,16 @@ def main():
                                        ff.DEFAULT_CONFIG))
         check("verify regex pytest", ff.is_verify_command("python3 -m pytest tests/"))
         check("verify regex helm lint", ff.is_verify_command("helm lint ./chart"))
+        check("verify heuristic --selfcheck",
+              ff.is_verify_command("py service.py --selfcheck"))
+        check("verify heuristic run_ci",
+              ff.is_verify_command("py ci/run_ci.py"))
+        check("verify heuristic verify.py",
+              ff.is_verify_command("python scripts/verify.py --all"))
+        check("plain script not verify",
+              not ff.is_verify_command("py app.py --port 8080"))
+        check("checkout.py not verify",
+              not ff.is_verify_command("py checkout.py"))
         check("correction detect", ff.looks_like_correction("No, that's wrong."))
         check("normal prompt not correction",
               not ff.looks_like_correction("Add a logging middleware"))

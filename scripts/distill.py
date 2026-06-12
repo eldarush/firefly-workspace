@@ -14,7 +14,7 @@ them with zero user action:
 
 Signals mined from events.jsonl + session state:
   error_streak    same error digest >= 2 times       -> candidate(friction)
-  repeated_cmd    same normalized command >= 3 times  -> candidate(automation)
+  repeated_cmd    same normalized command >= 2 times  -> candidate(automation)
   corrections     user corrected the model >= 2 times -> candidate(behavior)
   guard_denials   guard denied >= 1 destructive cmd   -> candidate(safety)
   win             verify pass after >=3 edits         -> candidate(win)
@@ -72,7 +72,7 @@ def distill_session(payload, state):
                            [e for e in _recent_events(payload, "tool_error", dg)], seen))
 
     for cmd, count in (state.get("cmd_counts") or {}).items():
-        if count >= 3:
+        if count >= 2:
             key = "cmd:" + ff.digest(cmd, 10)
             out.append(_mk(payload, "automation", key,
                            "Command pattern ran %dx this session: `%s`. Candidate "

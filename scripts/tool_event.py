@@ -69,6 +69,11 @@ def main():
                 st["last_verify"] = "pass"
                 st["edits_since_verify"] = 0
                 ff.log_event(payload, "verify", result="pass", cmd=cmd[:160])
+            # custom verifier (not a standard runner): remember it for the
+            # project so every future session tracks it without setup
+            if not ff.VERIFY_RE.search(cmd) and ff.VERIFY_HEUR_RE.search(cmd):
+                if ff.register_verifier(payload, cmd):
+                    ff.log_event(payload, "verifier_registered", cmd=cmd[:160])
 
         if err:
             dg = ff.digest(err[:200])
