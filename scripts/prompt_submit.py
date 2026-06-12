@@ -77,11 +77,11 @@ def main():
             and st["turns"] - st.get("last_frame_turn", -99) >= 8):
         st["last_frame_turn"] = st["turns"]
         st["frames_injected"] = st.get("frames_injected", 0) + 1
-        # once a plan exists and the full drill ran, later phases get a
-        # short nudge instead of the whole restate ceremony (wave-2 finding:
-        # the full frame re-firing mid-task reads as redundant ritual)
+        # once a plan exists the full drill already served its purpose -
+        # later frames are a short recenter, not the whole restate ceremony
+        # (wave-2/4 finding: full FRAME re-firing mid-task reads as ritual)
         plan_path = os.path.join(ff.firefly_dir(payload), "plan.md")
-        if st["frames_injected"] > 1 and os.path.exists(plan_path):
+        if os.path.exists(plan_path):
             extra.append(FRAME_SHORT)
         else:
             extra.append(FRAME)

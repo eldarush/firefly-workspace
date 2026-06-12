@@ -73,6 +73,10 @@ def cmd_start():
                or res.get("_raw") or "")
     print("=== FIREFLY SESSION CONTEXT (obey this) ===")
     print(ctx if ctx else "(no injected context)")
+    print("SANDBOX COMMAND MAP: in this sandbox the guard dry-run entry "
+          "point is `py ff.py guard \"<cmd>\"` and the tracked verify entry "
+          "point is `py ff.py verify \"<cmd>\"`. Use those forms wherever "
+          "the contract mentions guard checks or verify_run.py.")
     print("=== END CONTEXT ===")
 
 

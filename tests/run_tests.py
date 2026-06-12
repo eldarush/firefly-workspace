@@ -276,6 +276,8 @@ def main():
               json.dumps(out)[:200] if out else "no output")
         ctx = (out.get("hookSpecificOutput") or {}).get("additionalContext", "")
         check("contract injected", "operating contract" in ctx)
+        check("contract mandates guard verdict on risky suggestions",
+              "MUST obtain a guard verdict" in ctx, ctx[:400])
         check("budget <= ~1600 tok", len(ctx) / 3.5 <= 1700, "len=%d" % len(ctx))
         check(".firefly created", os.path.isdir(os.path.join(project, ".firefly")))
         check(".firefly self-gitignored",
@@ -310,6 +312,26 @@ def main():
         ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
         check("correction nudge", "correcting you" in ctx, ctx[:120])
         check("correction counted", read_state(project)["corrections"] == 1)
+
+        # once a plan exists, later frames are the short recenter form
+        with open(os.path.join(project, ".firefly", "plan.md"), "w",
+                  encoding="utf-8") as f:
+            f.write("# plan\ngoal: x\n")
+        sp = os.path.join(project, ".firefly", "state", "sess-test-1.json")
+        with open(sp, "r", encoding="utf-8") as f:
+            stj = json.load(f)
+        stj["last_frame_turn"] = -99
+        with open(sp, "w", encoding="utf-8") as f:
+            json.dump(stj, f)
+        rc, out, _ = run_hook("prompt_submit.py", base(project,
+                              hook_event_name="UserPromptSubmit",
+                              prompt="Now implement the second phase: add the retry "
+                                     "backoff configuration and integration tests"),
+                              project)
+        ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+        check("short frame once plan exists", "New phase:" in ctx
+              and "restate it in one sentence" not in ctx, ctx[:160])
+        os.remove(os.path.join(project, ".firefly", "plan.md"))
 
         # ---------------- pre_tool_guard ------------------------------
         print("\n[pre_tool_guard]")
@@ -666,6 +688,8 @@ def main():
               ff.is_verify_command("py test_textkit.py"))
         check("verify heuristic audit script",
               ff.is_verify_command("py audit.py live.properties"))
+        check("verify heuristic analyze script",
+              ff.is_verify_command("py analyze_drift.py"))
         check("plain script not verify",
               not ff.is_verify_command("py app.py --port 8080"))
         check("checkout.py not verify",

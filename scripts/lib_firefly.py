@@ -368,7 +368,7 @@ VERIFY_RE = re.compile(
 VERIFY_HEUR_RE = re.compile(
     r"(--(self-?check|verify|validate|health-?check|smoke)\b"
     r"|(^|[\s/\\])(verify|self_?check|run_ci|run_checks|run_tests|"
-    r"health_?check|smoke(_test)?|validate|preflight|audit|"
+    r"health_?check|smoke(_test)?|validate|preflight|audit|analyze|"
     r"test[\w-]*)[\w-]*\.(py|sh|ps1)\b"
     r"|\bmake (verify|smoke|validate)\b)",
     re.IGNORECASE,
