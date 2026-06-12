@@ -33,7 +33,7 @@ flowchart TB
 
 | Event | Script | Effect |
 |---|---|---|
-| SessionStart (startup/resume/clear/compact) | `session_start.py` | housekeeping, apply proposals, inject contract + top lessons + handoff (<= 1600 tok), record injected lesson ids |
+| SessionStart (startup/resume/clear/compact) | `session_start.py` | housekeeping, apply proposals, inject contract + env-spec facts + top lessons + handoff (<= 1600 tok), record injected lesson ids |
 | UserPromptSubmit | `prompt_submit.py` | turn count, correction detection + nudge, task-frame injection (rate-limited 1/8 turns), apply proposals |
 | PreToolUse (Bash) | `pre_tool_guard.py` | destroy -> deny; mutate-in-protected -> deny; audit |
 | PostToolUse (*) | `tool_event.py` | flight recorder: edits, verify runs, error streaks (nudge at 2), command repetition |

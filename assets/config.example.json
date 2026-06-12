@@ -29,6 +29,11 @@
     "auto_feedback": true,
     "min_recurrence": 2
   },
+  "environment": {
+    "spec_path": "FIREFLY-ENV.md",
+    "inject": true,
+    "max_inject_tokens": 500
+  },
   "docs": {
     "kiwix_url": "http://wikiall.internal:8090",
     "extra_sources": [

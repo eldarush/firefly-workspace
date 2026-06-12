@@ -210,6 +210,11 @@ DEFAULT_CONFIG = {
         "auto_feedback": True,             # implicit +helpful for lessons in clean verified sessions
         "min_recurrence": 2,               # sessions a signal must recur in before auto-lesson
     },
+    "environment": {
+        "spec_path": "",              # explicit spec path; else FIREFLY-ENV.md / .firefly/environment.md
+        "inject": True,               # inject pinned facts + section index at SessionStart
+        "max_inject_tokens": 500,     # budget for the pinned FF:ALWAYS block
+    },
     "docs": {
         "kiwix_url": "",              # e.g. http://wikiall.internal:8090
         "extra_sources": [],
@@ -383,6 +388,80 @@ def is_code_file(path, cfg=None):
 
 def looks_like_correction(prompt):
     return bool(CORRECTION_RE.search((prompt or "").strip()))
+
+
+# ---------------------------------------------------------------------------
+# environment spec (the org's source-of-truth file)
+# ---------------------------------------------------------------------------
+
+ENV_SPEC_NAMES = ("FIREFLY-ENV.md", os.path.join(".firefly", "environment.md"))
+_ENV_ALWAYS_RE = re.compile(
+    r"<!--\s*FF:ALWAYS\s*-->(.*?)<!--\s*/FF:ALWAYS\s*-->", re.S | re.I)
+
+
+def env_spec_path(payload=None, cfg=None):
+    """Resolve the environment spec - the single source-of-truth markdown file
+    describing the org's infra (GitLab URLs, clusters, registries, conventions).
+    Chain: $FIREFLY_ENV_SPEC > config environment.spec_path > FIREFLY-ENV.md
+    > .firefly/environment.md. Returns None when absent (fully optional)."""
+    root = project_dir(payload)
+    cands = []
+    e = os.environ.get("FIREFLY_ENV_SPEC", "").strip()
+    if e:
+        cands.append(e if os.path.isabs(e) else os.path.join(root, e))
+    c = (((cfg or {}).get("environment", {}) or {}).get("spec_path", "") or "").strip()
+    if c:
+        cands.append(c if os.path.isabs(c) else os.path.join(root, c))
+    for name in ENV_SPEC_NAMES:
+        cands.append(os.path.join(root, name))
+    for p in cands:
+        try:
+            if p and os.path.isfile(p):
+                return p
+        except Exception:
+            continue
+    return None
+
+
+def env_spec_summary(payload=None, cfg=None):
+    """Budgeted SessionStart injection for the env spec: the pinned FF:ALWAYS
+    facts verbatim plus an index of '## ' sections, so the model knows exact
+    endpoints without guessing and reads the file for details. '' when no
+    spec exists or injection is disabled."""
+    env = (cfg or {}).get("environment", {}) or {}
+    if not env.get("inject", True):
+        return ""
+    path = env_spec_path(payload, cfg)
+    if not path:
+        return ""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            text = f.read(200000)
+    except Exception:
+        return ""
+    try:
+        rel = os.path.relpath(path, project_dir(payload))
+        if rel.startswith(".."):
+            rel = path
+    except Exception:
+        rel = path
+    budget = int(env.get("max_inject_tokens", 500) or 500)
+    pinned = "\n".join(m.strip() for m in _ENV_ALWAYS_RE.findall(text) if m.strip())
+    while pinned and est_tokens(pinned) > budget:
+        pinned = pinned[: max(1, int(len(pinned) * 0.8))].rstrip()
+    heads = [ln.strip()[3:].strip() for ln in text.splitlines()
+             if ln.startswith("## ")][:16]
+    out = ["## Environment facts (source of truth: %s)" % rel]
+    if pinned:
+        out.append(pinned)
+    if heads:
+        out.append("The spec has more sections - READ the file before touching "
+                   "infra, never invent URLs/endpoints/cluster names: "
+                   + " | ".join(heads))
+    if not pinned and not heads:
+        out.append("Spec file exists but has no FF:ALWAYS block or ## sections; "
+                   "read it directly. Never invent URLs/endpoints.")
+    return "\n".join(out)
 
 
 # ---------------------------------------------------------------------------

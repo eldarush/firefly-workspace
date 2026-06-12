@@ -24,11 +24,12 @@ by ad-hoc prompts. This plugin is that harness.
 
 | Layer | What you get |
 |---|---|
-| **Workflows** (14 commands) | `/ff:plan`, `/ff:implement`, `/ff:review`, `/ff:debug`, `/ff:research`, `/ff:parallel`, `/ff:retro`, `/ff:commit`, `/ff:handoff`, `/ff:lessons`, `/ff:skillgen`, `/ff:init`, `/ff:onboard`, `/ff:config` |
+| **Workflows** (15 commands) | `/ff:plan`, `/ff:implement`, `/ff:review`, `/ff:debug`, `/ff:research`, `/ff:parallel`, `/ff:retro`, `/ff:commit`, `/ff:handoff`, `/ff:lessons`, `/ff:skillgen`, `/ff:init`, `/ff:onboard`, `/ff:config`, `/ff:env` |
 | **Specialists** (7 agents) | planner, scout, implementer, evaluator, researcher, reflector, auditor - each with bounded tools and a fresh context |
 | **Knowledge** (25 skills) | engineering discipline (TDD, systematic debugging, verification, planning) + SRE/QA/DEV/Research persona workflows + self-improvement protocols |
 | **Guardrails** (8 hooks) | destructive commands denied, production contexts read-only, verification stop-gate, error-streak detection, prompt coaching, compaction handoff - all Python stdlib, all fail-open |
 | **Memory** (`.firefly/`) | a curated lesson playbook with helpful/harmful counters, decay, quarantine, and human governance - injected into every session |
+| **Source of truth** (`FIREFLY-ENV.md`) | your org's environment spec - exact GitLab/registry/cluster/docs facts pinned into every session so agents never invent endpoints |
 
 ## The self-improvement loop (fully automatic)
 
@@ -103,8 +104,18 @@ needed at runtime, ever.
 
 ```text
 /ff:init        # config, verifier detection, CLAUDE.md contract, protected contexts
+/ff:env         # (recommended) create your environment spec - the source of truth
 /ff:onboard     # interactive tour for new team members
 ```
+
+### Your environment as the source of truth
+
+Drop a `FIREFLY-ENV.md` at the repo root (template: `/ff:env`, or set
+`$FIREFLY_ENV_SPEC` to share one org-wide file). Its `FF:ALWAYS` block - your
+GitLab URL, registries, cluster contexts, docs endpoints - is pinned into
+**every session**, and the rest is indexed by section so agents read exact
+facts instead of inventing them. Everything works without the spec; with it,
+agents stop guessing. Facts are injected as evidence, never as instructions.
 
 ## Daily loop
 

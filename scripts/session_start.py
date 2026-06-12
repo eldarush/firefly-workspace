@@ -2,10 +2,11 @@
 
 Injects (within ~1600 token budget):
   1. behavior contract core (compressed operating rules)
-  2. top-K playbook lessons (persona-weighted, decayed)
-  3. playbook auto-update notice (proposals applied silently this start)
-  4. deep-retro nudge when the candidate backlog is large
-  5. handoff notice when .firefly/handoff.md exists (post-compact/clear continuity)
+  2. environment facts from the env spec (FF:ALWAYS block + section index)
+  3. top-K playbook lessons (persona-weighted, decayed)
+  4. playbook auto-update notice (proposals applied silently this start)
+  5. deep-retro nudge when the candidate backlog is large
+  6. handoff notice when .firefly/handoff.md exists (post-compact/clear continuity)
 Also: housekeeping (GC old state, rotate events, apply pending proposals,
 record which lessons were injected so clean sessions feed back +helpful).
 Matcher: startup|resume|clear|compact. Fail-open always.
@@ -47,6 +48,15 @@ def main():
     ff.log_event(payload, "session_start", source=source, applied=applied or None)
 
     parts = [CONTRACT]
+
+    # environment spec: the org's source of truth - pinned facts go early so
+    # they survive budget pressure (the pop loop trims from the end)
+    try:
+        env_part = ff.env_spec_summary(payload, cfg)
+    except Exception:
+        env_part = ""
+    if env_part:
+        parts.append("\n" + env_part)
 
     if cfg.get("behavior", {}).get("lessons_injection", True):
         try:

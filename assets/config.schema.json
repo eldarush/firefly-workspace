@@ -63,6 +63,15 @@
         "min_recurrence": { "type": "integer", "default": 2, "description": "Distinct sessions a signal must recur in before an auto-lesson is proposed." }
       }
     },
+    "environment": {
+      "type": "object",
+      "description": "The environment spec: a markdown source-of-truth file about your infra. Resolution: $FIREFLY_ENV_SPEC > spec_path > FIREFLY-ENV.md > .firefly/environment.md.",
+      "properties": {
+        "spec_path": { "type": "string", "description": "Explicit path to the spec (absolute or project-relative). Empty = use default locations." },
+        "inject": { "type": "boolean", "default": true, "description": "Inject the FF:ALWAYS block + section index at SessionStart." },
+        "max_inject_tokens": { "type": "integer", "default": 500, "description": "Token budget for the pinned FF:ALWAYS block." }
+      }
+    },
     "docs": {
       "type": "object",
       "properties": {

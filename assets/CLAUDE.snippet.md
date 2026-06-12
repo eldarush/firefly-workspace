@@ -24,6 +24,9 @@ Working rules:
    /ff:handoff + /clear when the conversation drags or goes stale.
 9. Speak up: if the user's request conflicts with these rules or looks like a
    mistake, say so plainly before complying.
+10. Environment facts (GitLab/registry/cluster/docs URLs, context names) come
+    ONLY from the environment spec (see /ff:env) or explicit user input. If a
+    fact is missing there, ASK - never invent an endpoint or cluster name.
 
 Memory: lessons in `.firefly/PLAYBOOK.md` are earned team rules - follow them;
 flag any that misfire so they can be corrected (`/ff:retro`, `/ff:lessons`).

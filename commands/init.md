@@ -33,7 +33,14 @@ Follow these steps exactly:
    globs from config and ask the user to name their real production
    contexts/namespaces. Update config accordingly.
 
-6. **Report**: summarize what was created, then suggest the next steps:
+6. **Environment spec**: check for an env spec along the resolution order
+   ($FIREFLY_ENV_SPEC, config `environment.spec_path`, `FIREFLY-ENV.md`,
+   `.firefly/environment.md`). If none exists, explain in one sentence that
+   the spec is the source-of-truth file for org URLs/clusters that gets
+   injected into every session, and offer to create it now via /ff:env
+   (skippable - everything works without it).
+
+7. **Report**: summarize what was created, then suggest the next steps:
    `/ff:onboard` for a tour, `/ff:plan <task>` to start working.
 
 Do NOT commit anything. `.firefly/` keeps a self-ignoring .gitignore; only

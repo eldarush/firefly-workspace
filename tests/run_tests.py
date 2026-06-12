@@ -31,10 +31,13 @@ def check(name, cond, detail=""):
         print("  FAIL %s  %s" % (name, detail))
 
 
-def run_hook(script, payload, project):
+def run_hook(script, payload, project, extra_env=None):
     env = dict(os.environ)
     env["CLAUDE_PROJECT_DIR"] = project
     env["CLAUDE_PLUGIN_ROOT"] = ROOT
+    env.pop("FIREFLY_ENV_SPEC", None)
+    if extra_env:
+        env.update(extra_env)
     p = subprocess.run(
         [PY, os.path.join(SCRIPTS, script)],
         input=json.dumps(payload).encode("utf-8"),
@@ -112,7 +115,7 @@ def structure_lint():
 
     # commands
     cmd_files = sorted(os.listdir(os.path.join(ROOT, "commands")))
-    check("14 commands present", len(cmd_files) == 14, str(len(cmd_files)))
+    check("15 commands present", len(cmd_files) == 15, str(len(cmd_files)))
     bad = []
     for c in cmd_files:
         fm, _ = frontmatter(os.path.join(ROOT, "commands", c))
@@ -185,9 +188,14 @@ def structure_lint():
 
     # assets sanity
     for rel in ("assets/CLAUDE.snippet.md", "assets/config.schema.json",
-                "assets/config.example.json", "README.md", "CHANGELOG.md",
-                "LICENSE"):
+                "assets/config.example.json", "assets/environment.template.md",
+                "README.md", "CHANGELOG.md", "LICENSE"):
         check("exists: " + rel, os.path.exists(os.path.join(ROOT, rel)))
+    with open(os.path.join(ROOT, "assets", "environment.template.md"),
+              encoding="utf-8") as f:
+        tpl = f.read()
+    check("env template has FF:ALWAYS markers",
+          "<!-- FF:ALWAYS -->" in tpl and "<!-- /FF:ALWAYS -->" in tpl)
 
 
 def main():
@@ -516,6 +524,87 @@ def main():
               ff.tool_response_error({"exit_code": 2, "output": "boom"}) != "")
         check("success dict resp",
               ff.tool_response_error({"exit_code": 0, "output": "fine"}) == "")
+
+        # ---------------- environment spec -----------------------------
+        print("\n[environment]")
+        envproj = tempfile.mkdtemp(prefix="ff-env-")
+        try:
+            # (a) absent spec -> no env block, hook still fine
+            rc, out, err = run_hook("session_start.py", base(envproj, sid="env-1",
+                                    source="startup", hook_event_name="SessionStart"),
+                                    envproj)
+            ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+            check("no spec -> no env facts", rc == 0 and "Environment facts" not in ctx)
+
+            # (b) FIREFLY-ENV.md default location: pinned + index injected
+            spec = ("# Env\n\n<!-- FF:ALWAYS -->\n"
+                    "- GitLab: https://gitlab.acme.internal\n"
+                    "- prod context: prod-eu1 (READ-ONLY)\n"
+                    "<!-- /FF:ALWAYS -->\n\n## Clusters\nstuff\n\n## CI and runners\nstuff\n")
+            with open(os.path.join(envproj, "FIREFLY-ENV.md"), "w", encoding="utf-8") as f:
+                f.write(spec)
+            rc, out, _ = run_hook("session_start.py", base(envproj, sid="env-2",
+                                  source="startup", hook_event_name="SessionStart"),
+                                  envproj)
+            ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+            check("env facts injected", "Environment facts" in ctx and
+                  "gitlab.acme.internal" in ctx, ctx[:200])
+            check("section index injected", "Clusters" in ctx and "CI and runners" in ctx)
+            check("pinned before lessons (survives budget)",
+                  ctx.find("Environment facts") < (ctx.find("Playbook lessons")
+                  if "Playbook lessons" in ctx else len(ctx)))
+
+            # (c) $FIREFLY_ENV_SPEC override wins over default file
+            alt = os.path.join(envproj, "ops", "org-env.md")
+            os.makedirs(os.path.dirname(alt), exist_ok=True)
+            with open(alt, "w", encoding="utf-8") as f:
+                f.write("<!-- FF:ALWAYS -->\n- registry: registry.ALT.internal\n"
+                        "<!-- /FF:ALWAYS -->\n## Alt section\n")
+            rc, out, _ = run_hook("session_start.py", base(envproj, sid="env-3",
+                                  source="startup", hook_event_name="SessionStart"),
+                                  envproj, extra_env={"FIREFLY_ENV_SPEC": alt})
+            ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+            check("env var override wins", "registry.ALT.internal" in ctx
+                  and "gitlab.acme.internal" not in ctx, ctx[:200])
+
+            # (d) config spec_path beats default file
+            os.makedirs(os.path.join(envproj, ".firefly"), exist_ok=True)
+            with open(os.path.join(envproj, ".firefly", "config.json"), "w",
+                      encoding="utf-8") as f:
+                json.dump({"environment": {"spec_path": "ops/org-env.md"}}, f)
+            rc, out, _ = run_hook("session_start.py", base(envproj, sid="env-4",
+                                  source="startup", hook_event_name="SessionStart"),
+                                  envproj)
+            ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+            check("config spec_path wins over default", "registry.ALT.internal" in ctx)
+
+            # (e) inject:false disables; oversized pinned block trimmed to budget
+            with open(os.path.join(envproj, ".firefly", "config.json"), "w",
+                      encoding="utf-8") as f:
+                json.dump({"environment": {"inject": False}}, f)
+            rc, out, _ = run_hook("session_start.py", base(envproj, sid="env-5",
+                                  source="startup", hook_event_name="SessionStart"),
+                                  envproj)
+            ctx = ((out or {}).get("hookSpecificOutput") or {}).get("additionalContext", "")
+            check("inject:false disables env facts", "Environment facts" not in ctx)
+
+            big = ("<!-- FF:ALWAYS -->\n" + ("- fact: x" * 2000) + "\n<!-- /FF:ALWAYS -->\n")
+            with open(os.path.join(envproj, "FIREFLY-ENV.md"), "w", encoding="utf-8") as f:
+                f.write(big)
+            with open(os.path.join(envproj, ".firefly", "config.json"), "w",
+                      encoding="utf-8") as f:
+                json.dump({"environment": {"max_inject_tokens": 200}}, f)
+            os.environ["CLAUDE_PROJECT_DIR"] = envproj
+            try:
+                summary = ff.env_spec_summary({"cwd": envproj},
+                                              ff.load_config({"cwd": envproj}))
+                check("oversized pinned trimmed to budget",
+                      summary and ff.est_tokens(summary) < 400,
+                      "tok=%d" % ff.est_tokens(summary))
+            finally:
+                os.environ["CLAUDE_PROJECT_DIR"] = project
+        finally:
+            shutil.rmtree(envproj, ignore_errors=True)
 
         # ---------------- structure lint -------------------------------
         print("\n[structure]")
