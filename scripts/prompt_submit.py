@@ -18,6 +18,10 @@ verifier command you will run); (3) pick the single objective for this turn; \
 (4) prefer the smallest correct change. If requirements are ambiguous, ask the \
 one most important clarifying question instead of guessing."""
 
+FRAME_SHORT = """New phase: confirm your .firefly/plan.md still matches (update it \
+if scope changed), state this turn's single objective, and name the verifier \
+you will run before claiming done."""
+
 CORRECTION_NUDGE = """The user is correcting you. Stop, re-read their last two \
 messages, state in one sentence what you got wrong, and fix THAT - do not defend \
 the previous approach or repeat it."""
@@ -73,7 +77,14 @@ def main():
             and st["turns"] - st.get("last_frame_turn", -99) >= 8):
         st["last_frame_turn"] = st["turns"]
         st["frames_injected"] = st.get("frames_injected", 0) + 1
-        extra.append(FRAME)
+        # once a plan exists and the full drill ran, later phases get a
+        # short nudge instead of the whole restate ceremony (wave-2 finding:
+        # the full frame re-firing mid-task reads as redundant ritual)
+        plan_path = os.path.join(ff.firefly_dir(payload), "plan.md")
+        if st["frames_injected"] > 1 and os.path.exists(plan_path):
+            extra.append(FRAME_SHORT)
+        else:
+            extra.append(FRAME)
 
     ff.log_event(payload, "prompt", n=st["turns"],
                  digest=ff.digest(prompt[:200]), corr=corrected or None)

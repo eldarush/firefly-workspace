@@ -619,6 +619,10 @@ def main():
               ff.is_verify_command("py ci/run_ci.py"))
         check("verify heuristic verify.py",
               ff.is_verify_command("python scripts/verify.py --all"))
+        check("verify heuristic direct test file",
+              ff.is_verify_command("py test_textkit.py"))
+        check("verify heuristic audit script",
+              ff.is_verify_command("py audit.py live.properties"))
         check("plain script not verify",
               not ff.is_verify_command("py app.py --port 8080"))
         check("checkout.py not verify",

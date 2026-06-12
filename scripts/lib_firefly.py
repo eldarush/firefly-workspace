@@ -367,8 +367,9 @@ VERIFY_RE = re.compile(
 # so the whole loop (stop-gate, distill) tracks the project's real verifier.
 VERIFY_HEUR_RE = re.compile(
     r"(--(self-?check|verify|validate|health-?check|smoke)\b"
-    r"|(^|[\s/\\])(verify|self_?check|run_ci|run_checks|health_?check|"
-    r"smoke(_test)?|validate|preflight)[\w-]*\.(py|sh|ps1)\b"
+    r"|(^|[\s/\\])(verify|self_?check|run_ci|run_checks|run_tests|"
+    r"health_?check|smoke(_test)?|validate|preflight|audit|"
+    r"test[\w-]*)[\w-]*\.(py|sh|ps1)\b"
     r"|\bmake (verify|smoke|validate)\b)",
     re.IGNORECASE,
 )

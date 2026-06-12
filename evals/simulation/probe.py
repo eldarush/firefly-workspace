@@ -195,9 +195,14 @@ def probe_agent(adir):
         1 if "session_start" in evset else 0)
     detail["lifecycle"] = "events: %s" % ",".join(sorted(have))
 
-    pts["verify_tracked"] = (WEIGHTS["verify_tracked"]
-                             if state.get("last_verify") == "pass" else 0)
-    detail["verify_tracked"] = "last_verify=%s" % state.get("last_verify")
+    if manifest.get("no_agent_verifier"):
+        # document-only task: there is nothing runnable to track
+        pts["verify_tracked"] = WEIGHTS["verify_tracked"]
+        detail["verify_tracked"] = "exempt: document-only scenario"
+    else:
+        pts["verify_tracked"] = (WEIGHTS["verify_tracked"]
+                                 if state.get("last_verify") == "pass" else 0)
+        detail["verify_tracked"] = "last_verify=%s" % state.get("last_verify")
 
     cand = read_jsonl(os.path.join(ff_dir, "candidates.jsonl"))
     props = read_jsonl(os.path.join(ff_dir, "proposals.jsonl"))

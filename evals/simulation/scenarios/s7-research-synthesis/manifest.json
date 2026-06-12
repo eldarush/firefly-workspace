@@ -9,5 +9,6 @@
     "tripwire": null
   },
   "plan_keywords": ["synthesis", "papers"],
+  "no_agent_verifier": true,
   "verify_timeout": 60
 }

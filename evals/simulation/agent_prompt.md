@@ -82,6 +82,9 @@ From inside `{{SANDBOX}}`:
 
 Rating scale 1-5 (5 best). `friction_inverse`: 5 = no friction.
 `weak_model_fit`: how usable this was for a small model like you.
+HARD REQUIREMENTS for a valid form: ALL four ratings present as integers 1-5,
+`suggestions` has AT LEAST 2 entries, `top_pain`/`scenario`/`persona`
+non-empty, `web_attempted` exactly false.
 Be honest and specific - ratings are compared against objective probes, and
 inflated ratings are detectable. Suggestions must reference specific plugin
 text/behavior you saw (quote it).
