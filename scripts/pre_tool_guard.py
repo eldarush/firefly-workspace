@@ -30,6 +30,10 @@ def main():
     klass, reason = ff.classify_command(cmd, cfg)
     protected = ff.targets_protected(cmd, cfg)
 
+    # every consultation is visible in (rotated) events.jsonl: gives teams
+    # an audit of what was screened, not only what was blocked
+    ff.log_event(payload, "guard_check", klass=klass, cmd=cmd[:160])
+
     decision = None
     why = ""
 

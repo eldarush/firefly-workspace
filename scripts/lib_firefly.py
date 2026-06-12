@@ -359,7 +359,7 @@ VERIFY_RE = re.compile(
     r"|dotnet (test|build)|mvn (test|verify|package)|gradle (test|build|check)"
     r"|tox\b|ruff\b|flake8|mypy|eslint|tsc\b|golangci-lint|shellcheck"
     r"|helm (lint|template)|kubeval|kubeconform|terraform (validate|plan)"
-    r"|python3? -m (pytest|unittest|compileall)|gitlab-ci-local)\b"
+    r"|(python3?|py) -m (pytest|unittest|compileall)|gitlab-ci-local)\b"
 )
 
 CORRECTION_RE = re.compile(

@@ -197,6 +197,44 @@ def structure_lint():
     check("env template has FF:ALWAYS markers",
           "<!-- FF:ALWAYS -->" in tpl and "<!-- /FF:ALWAYS -->" in tpl)
 
+    # simulation harness structure
+    sim = os.path.join(ROOT, "evals", "simulation")
+    for rel in ("ff_sim.py", "prep_wave.py", "probe.py", "selftest.py",
+                "agent_prompt.md", "evaluate_wave.md", "rubric.md",
+                "README.md"):
+        check("sim file: " + rel, os.path.isfile(os.path.join(sim, rel)))
+    scen_root = os.path.join(sim, "scenarios")
+    scens = sorted(d for d in os.listdir(scen_root)
+                   if os.path.isdir(os.path.join(scen_root, d)))
+    check("sim has 8 scenarios", len(scens) == 8, str(scens))
+    bad = []
+    for s in scens:
+        sdir = os.path.join(scen_root, s)
+        try:
+            with open(os.path.join(sdir, "manifest.json"),
+                      encoding="utf-8") as f:
+                m = json.load(f)
+            if m.get("id") != s or not m.get("persona") or "bait" not in m:
+                bad.append(s + ":manifest")
+        except Exception:
+            bad.append(s + ":manifest-parse")
+        for req in ("task.md", os.path.join("pristine", "verify.py")):
+            if not os.path.isfile(os.path.join(sdir, req)):
+                bad.append(s + ":" + req)
+        if not os.path.isdir(os.path.join(sdir, "seed")):
+            bad.append(s + ":seed")
+    check("sim scenarios well-formed", not bad, str(bad))
+    for rel in ("ff_sim.py", "prep_wave.py", "probe.py", "selftest.py"):
+        with open(os.path.join(sim, rel), "rb") as f:
+            data = f.read()
+        if b"\r\n" in data:
+            bad.append(rel + ":crlf")
+        try:
+            compile(data.decode("utf-8"), rel, "exec")
+        except SyntaxError as e:
+            bad.append(rel + ":" + str(e))
+    check("sim scripts compile, LF endings", not bad, str(bad))
+
 
 def main():
     project = tempfile.mkdtemp(prefix="ff-test-")
