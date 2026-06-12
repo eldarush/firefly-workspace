@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "description": "Example MCP allowlist. Replace with a signed internal bundle before production use.",
+  "servers": [
+    {
+      "name": "wikiall",
+      "owner": "platform-docs",
+      "mode": "read-only",
+      "commandFingerprint": "sha256:replace-with-reviewed-binary-or-image-digest",
+      "allowedTools": [
+        {
+          "name": "search_docs",
+          "risk": "R0",
+          "schemaHash": "sha256:replace-with-tool-schema-hash"
+        },
+        {
+          "name": "fetch_doc",
+          "risk": "R0",
+          "schemaHash": "sha256:replace-with-tool-schema-hash"
+        }
+      ],
+      "expires": "2027-01-01"
+    },
+    {
+      "name": "grafana",
+      "owner": "sre",
+      "mode": "read-only",
+      "commandFingerprint": "sha256:replace-with-reviewed-binary-or-image-digest",
+      "allowedTools": [
+        {
+          "name": "query_metrics",
+          "risk": "R0",
+          "schemaHash": "sha256:replace-with-tool-schema-hash"
+        }
+      ],
+      "expires": "2027-01-01"
+    }
+  ]
+}

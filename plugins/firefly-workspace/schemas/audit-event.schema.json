@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firefly.local/schemas/firefly-workspace/audit-event.schema.json",
+  "title": "Firefly Workspace Audit Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timestamp",
+    "session_id",
+    "event",
+    "cwd",
+    "plugin_version",
+    "policy_version",
+    "decision"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "user": {
+      "type": "string"
+    },
+    "event": {
+      "type": "string"
+    },
+    "cwd": {
+      "type": "string"
+    },
+    "plugin_version": {
+      "type": "string"
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "risk_class": {
+      "type": "string",
+      "enum": [
+        "R0",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "unknown"
+      ]
+    },
+    "normalized_action": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "ask",
+        "deny",
+        "defer",
+        "observe"
+      ]
+    },
+    "approval_id": {
+      "type": "string"
+    },
+    "input_hash": {
+      "type": "string"
+    },
+    "output_hash": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    }
+  }
+}

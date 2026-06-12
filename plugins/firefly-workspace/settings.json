@@ -1,0 +1,4 @@
+{
+  "agent": "firefly-architect",
+  "subagentStatusLine": "${agent} | Firefly"
+}

@@ -1,0 +1,81 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/firefly_hook.py"
+            ],
+            "timeout": 10,
+            "statusMessage": "Loading Firefly context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/firefly_hook.py"
+            ],
+            "timeout": 10,
+            "statusMessage": "Preparing Firefly workspace"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/firefly_hook.py"
+            ],
+            "timeout": 10,
+            "statusMessage": "Checking Firefly policy"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell|Edit|Write|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/firefly_hook.py"
+            ],
+            "timeout": 10,
+            "statusMessage": "Capturing failure context"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/firefly_hook.py"
+            ],
+            "timeout": 10,
+            "statusMessage": "Writing Firefly retrospective"
+          }
+        ]
+      }
+    ]
+  }
+}

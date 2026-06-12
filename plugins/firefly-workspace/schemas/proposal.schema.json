@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://firefly.local/schemas/firefly-workspace/proposal.schema.json",
+  "title": "Firefly Workspace Improvement Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "created_at",
+    "status",
+    "source",
+    "proposal",
+    "validation"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "memory",
+        "skill",
+        "agent",
+        "hook",
+        "policy",
+        "prompt",
+        "eval",
+        "retrospective"
+      ]
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "needs-human-review",
+        "approved",
+        "rejected",
+        "superseded"
+      ]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_id",
+        "source_digest"
+      ],
+      "properties": {
+        "session_id": {
+          "type": "string"
+        },
+        "source_digest": {
+          "type": "string"
+        },
+        "transcript_path": {
+          "type": "string"
+        },
+        "source_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "proposal": {
+      "type": "object"
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eval_cases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approval_required": {
+          "type": "boolean"
+        },
+        "rollback": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "firefly-workspace",
+  "displayName": "Firefly Workspace",
+  "description": "Governed Claude Code-native workflows, agents, hooks, and self-improvement queues for airgapped engineering teams.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Firefly Team"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "airgap",
+    "devops",
+    "sre",
+    "qa",
+    "agentic-coding",
+    "claude-code",
+    "governance"
+  ],
+  "defaultEnabled": true,
+  "hooks": "./hooks/hooks.json",
+  "agents": "./agents/",
+  "skills": "./skills/",
+  "userConfig": {
+    "firefly_context_file": {
+      "type": "file",
+      "title": "Firefly context file",
+      "description": "Optional project or team context file. Defaults to .firefly/context.md when present.",
+      "required": false
+    },
+    "policy_bundle": {
+      "type": "file",
+      "title": "Policy bundle",
+      "description": "Optional signed Firefly policy bundle for command and MCP governance.",
+      "required": false
+    },
+    "airgap_mode": {
+      "type": "boolean",
+      "title": "Strict airgap mode",
+      "description": "When enabled, Firefly guidance assumes no public network access and local-only documentation, tools, models, and registries.",
+      "default": true
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "fireflyteam",
+  "owner": {
+    "name": "Firefly Team"
+  },
+  "plugins": [
+    {
+      "name": "firefly-workspace",
+      "description": "Claude Code-native workspace for governed, airgapped DevOps, SRE, QA, development, and research teams.",
+      "source": "./plugins/firefly-workspace",
+      "version": "0.1.0",
+      "defaultEnabled": true
+    }
+  ]
+}

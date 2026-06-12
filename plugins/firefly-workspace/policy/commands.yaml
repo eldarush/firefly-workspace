@@ -1,0 +1,62 @@
+# Firefly Workspace starter command policy.
+# Treat this as a seed for your internal signed policy bundle.
+version: 0.1.0
+default_mode: ask
+risk_classes:
+  R0:
+    description: Read-only local context and test discovery.
+    default_decision: allow
+  R1:
+    description: Workspace-only edits and local tests.
+    default_decision: ask
+  R2:
+    description: Shared CI, dependency, generated manifest, or promotion queue changes.
+    default_decision: ask
+  R3:
+    description: Cluster, deployment, registry, secret, or production-impacting actions.
+    default_decision: ask_two_person
+  R4:
+    description: Destructive, irreversible, broad delete, force push, or policy weakening actions.
+    default_decision: deny
+deny_patterns:
+  - name: pipe_to_shell
+    risk: R4
+    pattern: "(curl|wget).*[|].*(sh|bash|zsh|python|python3)"
+    reason: "Never execute network content directly. Download, inspect, pin, and run reviewed artifacts."
+  - name: broad_recursive_delete
+    risk: R4
+    pattern: "rm\\s+-[^\\n]*r[^\\n]*f\\s+(/|~|\\$HOME)"
+    reason: "Broad recursive deletes require break-glass approval."
+  - name: terraform_apply_destroy
+    risk: R3
+    pattern: "terraform\\s+(apply|destroy)"
+    reason: "Terraform changes must go through Firefly plan, guardrails, VCS review, and approval."
+  - name: kubectl_delete
+    risk: R3
+    pattern: "kubectl\\s+delete"
+    reason: "Cluster deletion requires explicit service-owner approval."
+ask_patterns:
+  - name: helm_upgrade
+    risk: R3
+    pattern: "helm\\s+upgrade"
+  - name: argocd_sync
+    risk: R3
+    pattern: "argocd\\s+app\\s+sync"
+  - name: kargo_promote
+    risk: R3
+    pattern: "kargo\\s+promote"
+  - name: docker_push
+    risk: R2
+    pattern: "docker\\s+push"
+audit_fields:
+  - session_id
+  - user
+  - cwd
+  - plugin_version
+  - policy_version
+  - risk_class
+  - normalized_action
+  - decision
+  - approval_id
+  - input_hash
+  - output_hash
