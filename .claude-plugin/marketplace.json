@@ -1,0 +1,24 @@
+{
+  "name": "firefly-workspace",
+  "description": "Firefly team plugin marketplace. Mirror this repo to your internal Git server for airgapped installs.",
+  "owner": {
+    "name": "Firefly Team",
+    "url": "https://github.com/thefflyteam"
+  },
+  "plugins": [
+    {
+      "name": "ff",
+      "source": "./",
+      "displayName": "Firefly Workspace",
+      "description": "Self-improving, safety-guarded Claude Code workspace for SRE, QA, DEV and Research teams in airgapped environments.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Firefly Team"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "tags": ["devops", "self-improving", "airgapped"],
+      "strict": true
+    }
+  ]
+}

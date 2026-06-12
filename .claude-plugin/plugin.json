@@ -1,0 +1,23 @@
+{
+  "name": "ff",
+  "displayName": "Firefly Workspace",
+  "version": "1.0.0",
+  "description": "Self-improving Claude Code workspace for airgapped DevOps teams: disciplined planning, weak-model harness engineering, safety guardrails, and an ACE-style lesson playbook that compounds with every session.",
+  "author": {
+    "name": "Firefly Team",
+    "url": "https://github.com/thefflyteam"
+  },
+  "homepage": "https://github.com/eldarush/firefly-workspace",
+  "repository": "https://github.com/eldarush/firefly-workspace",
+  "license": "MIT",
+  "keywords": [
+    "devops",
+    "sre",
+    "qa",
+    "self-improving",
+    "airgapped",
+    "context-engineering",
+    "kubernetes",
+    "gitops"
+  ]
+}

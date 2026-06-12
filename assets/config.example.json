@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "personas": ["sre", "dev"],
+  "behavior": {
+    "stop_gate": true,
+    "prompt_frame": true,
+    "lessons_injection": true,
+    "auto_allow_read": false,
+    "destroy": "deny",
+    "mutate_in_protected": "deny",
+    "max_stop_blocks_per_session": 2
+  },
+  "protected": {
+    "contexts": ["*prod*", "*production*"],
+    "namespaces": ["*prod*", "kube-system"]
+  },
+  "verify": {
+    "commands": ["make test"]
+  },
+  "lessons": {
+    "max_inject": 6,
+    "max_inject_tokens": 1200
+  },
+  "docs": {
+    "kiwix_url": "http://wikiall.internal:8090",
+    "extra_sources": [
+      { "name": "qaas", "url": "http://docs.qaas.internal", "notes": "QA framework docs" }
+    ]
+  },
+  "deny_extra": [],
+  "allow_extra": []
+}

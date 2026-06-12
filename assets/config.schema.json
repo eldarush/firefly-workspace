@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Firefly Workspace configuration (.firefly/config.json)",
+  "type": "object",
+  "properties": {
+    "version": { "type": "integer", "default": 1 },
+    "personas": {
+      "type": "array",
+      "items": { "enum": ["sre", "qa", "dev", "research"] },
+      "description": "Active personas; weight playbook lesson selection."
+    },
+    "behavior": {
+      "type": "object",
+      "properties": {
+        "stop_gate": { "type": "boolean", "default": true, "description": "Block premature completion after unverified code edits." },
+        "prompt_frame": { "type": "boolean", "default": true, "description": "Inject a short task-framing nudge on new nontrivial tasks." },
+        "lessons_injection": { "type": "boolean", "default": true, "description": "Inject top playbook lessons at SessionStart." },
+        "auto_allow_read": { "type": "boolean", "default": false, "description": "Auto-approve read-only commands (loosens permissions; opt-in)." },
+        "destroy": { "enum": ["deny", "ask"], "default": "deny" },
+        "mutate_in_protected": { "enum": ["deny", "ask"], "default": "deny" },
+        "max_stop_blocks_per_session": { "type": "integer", "default": 2 }
+      }
+    },
+    "protected": {
+      "type": "object",
+      "description": "Glob patterns marking production-like targets.",
+      "properties": {
+        "contexts": { "type": "array", "items": { "type": "string" } },
+        "namespaces": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verify": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Project verifier commands (first one is suggested by the stop gate)."
+        },
+        "code_suffixes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "lessons": {
+      "type": "object",
+      "properties": {
+        "max_inject": { "type": "integer", "default": 6 },
+        "max_inject_tokens": { "type": "integer", "default": 1200 },
+        "max_active": { "type": "integer", "default": 100 },
+        "max_per_scope": { "type": "integer", "default": 20 },
+        "decay_half_life_weeks": { "type": "number", "default": 4 },
+        "trial_slots": { "type": "integer", "default": 1 }
+      }
+    },
+    "docs": {
+      "type": "object",
+      "properties": {
+        "kiwix_url": { "type": "string", "description": "Internal Kiwix/WikiAll base URL, e.g. http://wikiall.internal:8090" },
+        "extra_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "url": { "type": "string" },
+              "notes": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "deny_extra": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extra regexes treated as destructive (denied)."
+    },
+    "allow_extra": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extra regexes treated as read-only."
+    }
+  }
+}
