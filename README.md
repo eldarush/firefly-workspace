@@ -188,9 +188,9 @@ skills/              25 skills (discipline, self-improvement, personas)
 hooks/hooks.json     8 lifecycle hooks
 scripts/             Python stdlib hook engine (lib, curator, distiller, 8 entry points)
 assets/              config schema/example, CLAUDE.md contract snippet, doc templates
-evals/               prompt-injection regression corpus
+evals/               prompt-injection corpus + 100-run simulation harness
 docs/                architecture, safety, self-improvement, personas, airgap install, adoption
-tests/run_tests.py   offline test harness (58+ checks, no dependencies)
+tests/run_tests.py   offline test harness (160 checks, no dependencies)
 ```
 
 ## Validate
@@ -208,6 +208,7 @@ claude plugin validate .       # manifest check (when claude CLI is available)
 - [Personas](docs/PERSONAS.md) - SRE / QA / DEV / Research usage patterns
 - [Airgapped install](docs/INSTALL-airgapped.md) - mirroring, managed settings, release checklist
 - [Adoption playbook](docs/ADOPTION.md) - rolling it out to a skeptical team, ROI metrics
+- [Simulation results](evals/simulation/RESULTS.md) - 100 weak-model runs, score trend, what actually moved the needle
 
 ## Design commitments
 

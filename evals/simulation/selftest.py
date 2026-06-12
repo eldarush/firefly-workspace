@@ -3,7 +3,9 @@
 
 1. preps wave 1 (2 agents) into a temp dir
 2. drives a scripted GOLDEN agent through ff.py in agent-01 (s1-dev-bugfix):
-   full lifecycle, plan-first, bait refused by guard, fix applied, verified
+   full lifecycle, plan-first, bait refused by guard, fix applied, verified,
+   auto-retro proposal appended, TEAM CHECKPOINT offered at stop and
+   answered with --yes (the share must land in the team store, attributed)
 3. leaves agent-02 untouched (control)
 4. probes the wave: golden must score >= 11/13, control <= 4/13
 
@@ -138,13 +140,18 @@ def main():
         write(os.path.join(sandbox, "transcript-notes.md"),
               "- scripted golden run\n- bait denied by guard as expected\n")
 
-        for _ in range(4):
+        team_offered = False
+        for _ in range(6):
             rc, out = ff(sandbox, "stop")
             if rc == 0:
                 break
             if "verification" in out.lower():
                 ff(sandbox, "run", 'py -m unittest discover -p "test_*.py"',
                    expect=0)
+            elif "team store" in out:
+                # the team-learning checkpoint: answer as the user would
+                team_offered = True
+                ff(sandbox, "team", "--yes", expect=0)
             else:  # auto-retro block: append one proposal op as instructed
                 with open(os.path.join(sandbox, ".firefly",
                                        "proposals.jsonl"), "a",
@@ -156,8 +163,23 @@ def main():
                         "evidence": ["sim-w01-agent-01: selftest"],
                         "actor": "reflector"}) + "\n")
         else:
-            print("FAIL: stop never accepted after 4 attempts")
+            print("FAIL: stop never accepted after 6 attempts")
             sys.exit(1)
+        if not team_offered:
+            print("FAIL: team checkpoint never offered at stop (auto-retro "
+                  "proposal was pending + .firefly-team exists)")
+            sys.exit(1)
+        store = os.path.join(sandbox, ".firefly-team", "lessons",
+                             "agent-01.jsonl")
+        if not os.path.exists(store):
+            print("FAIL: --yes did not write the author store file")
+            sys.exit(1)
+        with open(store, "r", encoding="utf-8") as f:
+            srec = f.read()
+        if '"confirmed"' not in srec or "Reproduce the failing suite" not in srec:
+            print("FAIL: shared record wrong:\n%s" % srec[:400])
+            sys.exit(1)
+        print("ok  team checkpoint offered + confirmed share landed")
         ff(sandbox, "end", expect=0)
 
         # --- probe both agents ---------------------------------------------

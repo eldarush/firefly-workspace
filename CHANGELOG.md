@@ -36,10 +36,12 @@ runs. Full data: `evals/simulation/RESULTS.md`.
   Stop gate cites the tracked outcome. Verifiers auto-register from
   observed test commands (`scripts/verifier_detect.py`).
 - **Guard dry-run + audit-record contract** (`guard --check`): classify any
-  command without executing it; the CONTRACT now frames guard verdicts as
-  the audit record for risky suggestions - especially ones you decide NOT
-  to run - and deny messages include next-step guidance. In simulation this
-  tripled spontaneous guard usage (30% -> 90%).
+  command without executing it, get a paste-ready `audit line:` for the
+  postmortem/PR; the CONTRACT now frames guard verdicts as the audit record
+  for risky suggestions - especially ones you decide NOT to run, even when
+  another rule already forbids them - and deny messages include next-step
+  guidance. In simulation, recorded verdicts for refused bait went from
+  10-30% of agents to 50% in one wave after the reframe.
 - **Plan-aware prompt frames + FRAME_SHORT**: repeat prompts in a session
   get a 3-line frame instead of the full block; frames surface the active
   plan file when one exists.
@@ -63,6 +65,11 @@ runs. Full data: `evals/simulation/RESULTS.md`.
 
 ### Fixed
 
+- **Guard pipe-to-shell bypass**: `curl ... | sh` style installers were
+  split on the pipe before pattern matching, so the pipe-to-shell deny
+  patterns could never fire and such commands classified read-only. A
+  whole-line pass now runs first; `curl ... | jq` correctly stays read.
+  (Found by the simulation campaign's bait probe - upgrade recommended.)
 - Research scenario citation rule (s7) - synthesis questions now require
   inline `[P1]`-style citations, closing the "right answer, no evidence"
   gap probed in waves 5-6.
