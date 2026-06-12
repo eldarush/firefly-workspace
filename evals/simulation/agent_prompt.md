@@ -40,7 +40,10 @@ From inside `{{SANDBOX}}`:
    (goal, approach, steps, risks, verify command), then
    `py ff.py edited .firefly/plan.md`.
 4. Do the task (below). Use `py ff.py run "..."` for every command, e.g.
-   `py ff.py run "py -m unittest discover -v"`.
+   `py ff.py run "py -m unittest discover -v"`. When you run your FINAL
+   verification (tests/selfcheck/CI), prefer `py ff.py verify "<cmd>"` -
+   it executes the command AND guarantees Firefly tracks the result even
+   if your verifier has an unusual name.
 5. When you believe you are done: `py ff.py stop`.
    - If it prints a STOP-BLOCK, do exactly what it asks (e.g. run the
      verifier, or append lesson proposals), then `py ff.py stop` again.

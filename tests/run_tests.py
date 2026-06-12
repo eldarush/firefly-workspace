@@ -369,6 +369,49 @@ def main():
               p.returncode == 0 and "NEUTRAL" in
               p.stdout.decode("utf-8", "replace"))
 
+        # ---------------- verify_run entry point ----------------------
+        print("\n[verify_run]")
+        env3 = dict(os.environ)
+        env3["CLAUDE_PROJECT_DIR"] = project
+        env3["FF_SESSION_ID"] = "verify-ep-1"
+        odd = os.path.join(project, "weird_name_checker.py")
+        with open(odd, "w", encoding="utf-8") as f:
+            f.write("import sys; sys.exit(0)\n")
+        p = subprocess.run([PY, os.path.join(SCRIPTS, "verify_run.py"),
+                            "py weird_name_checker.py"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           env=env3, cwd=project, timeout=60)
+        out_txt = p.stdout.decode("utf-8", "replace")
+        check("verify_run pass exits 0 and reports PASS",
+              p.returncode == 0 and "PASS" in out_txt, out_txt[:160])
+        evs = read_events(project)
+        check("verify_run logs tracked verify event",
+              any(e.get("ev") == "verify" and e.get("entrypoint")
+                  and e.get("result") == "pass" for e in evs))
+        vst = read_state(project, "verify-ep-1")
+        check("verify_run updates session state",
+              vst.get("verify_seen") is True
+              and vst.get("last_verify") == "pass")
+        cfgp = os.path.join(project, ".firefly", "config.json")
+        with open(cfgp, "r", encoding="utf-8") as f:
+            vcmds = (json.load(f).get("verify", {}) or {}).get("commands", [])
+        check("verify_run registers unrecognized verifier",
+              any("weird_name_checker" in c for c in vcmds), str(vcmds))
+        with open(odd, "w", encoding="utf-8") as f:
+            f.write("import sys; sys.exit(3)\n")
+        p = subprocess.run([PY, os.path.join(SCRIPTS, "verify_run.py"),
+                            "py weird_name_checker.py"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           env=env3, cwd=project, timeout=60)
+        check("verify_run mirrors failing exit code",
+              p.returncode == 3 and "FAIL" in
+              p.stdout.decode("utf-8", "replace"))
+        p = subprocess.run([PY, os.path.join(SCRIPTS, "verify_run.py")],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           env=env3, cwd=project, timeout=60)
+        check("verify_run no-arg reuses registered verifier",
+              "registered verifier" in p.stdout.decode("utf-8", "replace"))
+
         # ---------------- tool_event ----------------------------------
         print("\n[tool_event]")
         rc, out, _ = run_hook("tool_event.py", base(project,

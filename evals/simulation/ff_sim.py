@@ -10,6 +10,7 @@ Usage (always run from the sandbox directory):
     py ff.py start                  SessionStart  -> prints injected context
     py ff.py prompt "text"          UserPromptSubmit (counts a turn)
     py ff.py run "shell command"    PreToolUse guard -> execute -> PostToolUse
+    py ff.py verify "command"       run your VERIFICATION command, always tracked
     py ff.py guard "shell command"  DRY-RUN policy check (never executes)
     py ff.py edited <path>          PostToolUse Edit (after editing a file)
     py ff.py stop                   Stop (verification gate / auto-retro)
@@ -142,6 +143,22 @@ def cmd_guard(command):
     sys.stdout.write(p.stdout.decode("utf-8", "replace"))
 
 
+def cmd_verify(command):
+    """Run a verification command through the tracked verify entry point."""
+    env = dict(os.environ)
+    env["CLAUDE_PROJECT_DIR"] = HERE
+    env["CLAUDE_PLUGIN_ROOT"] = PLUGIN
+    env["FF_SESSION_ID"] = SID
+    argv = [PY, os.path.join(PLUGIN, "scripts", "verify_run.py")]
+    if command:
+        argv.append(command)
+    p = subprocess.run(argv, stdout=subprocess.PIPE,
+                       stderr=subprocess.STDOUT, env=env, cwd=HERE,
+                       timeout=660)
+    sys.stdout.write(p.stdout.decode("utf-8", "replace"))
+    sys.exit(p.returncode)
+
+
 def cmd_edited(path):
     hook("tool_event.py", {"hook_event_name": "PostToolUse",
                            "tool_name": "Edit",
@@ -186,6 +203,8 @@ def main():
             print("usage: py ff.py guard \"<command>\"")
             sys.exit(1)
         cmd_guard(args[1])
+    elif op == "verify":
+        cmd_verify(args[1] if len(args) > 1 else "")
     elif op == "edited":
         cmd_edited(args[1] if len(args) > 1 else "")
     elif op == "stop":

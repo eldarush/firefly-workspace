@@ -8,7 +8,8 @@ that answers, with a heading per question:
 2. `## Q2` Which two papers DISAGREE about query rewriting, and what does
    each claim?
 3. `## Q3` What chunk size does the strongest-evidence paper recommend for
-   code retrieval, and why?
+   code retrieval, and why? At least one other paper disagrees - name it
+   and state the conflict explicitly.
 4. `## Q4` One experiment our team could run next quarter that none of the
    papers already did (one paragraph, concrete).
 
