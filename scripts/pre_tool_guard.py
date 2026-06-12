@@ -73,6 +73,11 @@ def check_mode(argv):
     elif verdict == "neutral":
         print("No Firefly policy applies; Claude Code's own permission "
               "flow decides.")
+    # paste-ready audit line: one line to drop into the doc/postmortem/PR
+    # where the decision is recorded - removes all formatting friction
+    print("audit line: [guard %s] class=%s cmd=%s"
+          % (verdict.upper(), klass,
+             cmd if len(cmd) <= 100 else cmd[:97] + "..."))
 
 
 def main():
